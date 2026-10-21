@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HIGHBALL MAKER</title>
+<meta name="theme-color" content="#11100f">
+<style>
+:root{--cream:#f1e8da;--muted:#aa9a83;--gold:#dabb7c;--edge:rgba(255,224,167,.20)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#12100f;color:var(--cream);font-family:system-ui,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #fbdca5;outline-offset:4px}
+#app{width:100%;height:100vh;height:100dvh;min-height:510px;position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(180deg,#1d1814 0%,#141110 55%,#100f0f 100%)}
+#scene{position:absolute;inset:0;touch-action:none;cursor:crosshair}#scene canvas{display:block;width:100%;height:100%;touch-action:none}.tool{touch-action:none;user-select:none;-webkit-user-select:none}
+#vignette{display:none}
+#grain{display:none}
+#top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:clamp(15px,3vw,31px) clamp(16px,4vw,48px);pointer-events:none}
+.brand{font-family:Georgia,"Times New Roman",serif;letter-spacing:.24em;font-size:clamp(13px,1.8vw,19px);font-weight:600;text-shadow:0 2px 12px #0009}.brand .sub{font-family:system-ui,sans-serif;display:block;margin-top:8px;letter-spacing:.27em;font-size:9px;color:#c5a67a;font-weight:500}
+.topright{display:flex;align-items:center;gap:8px;pointer-events:auto}.topbtn{background:rgba(23,20,17,.68);backdrop-filter:blur(12px);border:1px solid var(--edge);color:var(--cream);padding:10px 16px;border-radius:7px;font-size:12px;letter-spacing:.1em}.finish{background:linear-gradient(145deg,#dcc291,#a98750);color:#24190e;font-weight:800;border:0;box-shadow:0 5px 27px #0007}
+#recipe{position:absolute;top:88px;left:clamp(16px,4vw,48px);z-index:1;color:#d9c9ad;pointer-events:none;font-size:11px;letter-spacing:.055em;line-height:2.1;text-shadow:0 1px 10px #000b}
+#recipe b{color:#faf0df;font-weight:600;font-variant-numeric:tabular-nums;min-width:42px;display:inline-block;text-align:right}#recipe .tag{font-size:9px;opacity:.7;letter-spacing:.2em;display:block;margin-bottom:7px}
+#recipe .dot{color:#bba47e;padding:0 7px}
+#message{position:absolute;z-index:3;bottom:clamp(145px,19vh,190px);left:50%;transform:translateX(-50%);width:min(calc(100% - 32px),620px);text-align:center;pointer-events:none;color:#f9ebd1;text-shadow:0 2px 11px #000,0 0 25px #000;font-size:clamp(13px,1.4vw,15px);line-height:1.5;letter-spacing:.06em;min-height:46px}
+#message small{display:block;color:#c7b69a;margin-top:4px;font-size:10px;letter-spacing:.06em}
+#tray{position:absolute;z-index:3;bottom:max(15px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:7px;width:min(790px,calc(100% - 24px));padding:10px;background:rgba(19,17,15,.79);border:1px solid rgba(245,207,148,.20);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;box-shadow:0 20px 75px #0009}
+.tool{background:transparent;border:1px solid transparent;border-radius:10px;color:#bdb1a0;flex:1;min-width:0;padding:11px 4px 10px;transition:background .18s,border-color .18s,color .18s,transform .18s;display:flex;flex-direction:column;align-items:center;gap:5px;white-space:nowrap}
+.tool:hover{background:rgba(255,255,255,.07)}.tool.active{background:linear-gradient(145deg,rgba(211,175,111,.20),rgba(112,88,48,.13));border-color:rgba(240,210,155,.62);color:#fff4df;transform:translateY(-3px)}.tool .symbol{font-size:clamp(25px,3vw,32px);filter:drop-shadow(0 3px 7px #0007);line-height:1.25}.tool .ja{font-weight:700;font-size:clamp(10px,1.5vw,13px)}.tool .en{font-family:Georgia,serif;color:#b5a38a;font-size:9px;letter-spacing:.10em}.trayfoot{display:none}
+#mode{position:absolute;right:clamp(16px,4vw,48px);bottom:156px;color:#ae9778;font-family:Georgia,serif;font-size:10px;letter-spacing:.2em;text-shadow:0 1px 10px #000;pointer-events:none}
+#mode .led{width:6px;height:6px;border-radius:50%;background:#d9bc86;display:inline-block;margin-right:7px;box-shadow:0 0 10px #e5bf86}
+#iceDropHint{display:none;position:absolute;z-index:4;left:50%;top:24%;transform:translate(-50%,-50%);padding:7px 13px;border:1px solid #f9d798a0;border-radius:999px;background:#211a13db;color:#fff0cb;font-size:12px;pointer-events:none;box-shadow:0 0 25px #e8bd5988}#iceDropHint.active{display:block}#tiltHud{display:none;position:absolute;z-index:6;right:clamp(12px,3vw,38px);top:108px;width:min(245px,44vw);padding:11px 14px;border:1px solid #f0ca834d;border-radius:10px;background:rgba(22,17,12,.82);backdrop-filter:blur(10px);font-size:12px;color:#f0ddbd;pointer-events:none}#tiltHud.active{display:block}#tiltHud .meter{height:6px;background:#60472c;border-radius:20px;overflow:hidden;margin:10px 0 5px}#tiltHud i{display:block;width:0;height:100%;background:linear-gradient(90deg,#d5a66c,#f5d48b);border-radius:20px}#tiltHud small{font-size:10px;color:#bfad92}
+.modal{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:rgba(9,9,9,.76);backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}.modal.hidden{display:none}
+.dialog{background:linear-gradient(160deg,#2a221b,#171512 70%);border:1px solid rgba(247,208,148,.32);box-shadow:0 28px 120px #000c;max-width:480px;width:100%;padding:clamp(25px,4vw,43px);border-radius:5px;position:relative;text-align:center}
+.dialog .eyebrow{color:#d0ac6b;font-family:Georgia,serif;font-size:11px;letter-spacing:.32em;margin-bottom:14px}.dialog h1,.dialog h2{font-family:Georgia,"Yu Mincho",serif;line-height:1.45;letter-spacing:.08em;font-size:clamp(26px,4vw,38px);font-weight:500;margin:0 0 15px}.dialog .lead{font-size:13px;color:#d6c6ac;line-height:2.1;margin:0 0 23px}.steps{text-align:left;border-top:1px solid #ffffff23;padding:12px 0;margin:0 0 20px;display:grid;gap:9px}.step{display:flex;gap:13px;align-items:flex-start;color:#d5c9ba;font-size:12px;line-height:1.6}.num{color:#d4b881;font-family:Georgia,serif;letter-spacing:.09em;min-width:19px}
+.primary{background:#d4b681;color:#24180c;border:0;border-radius:4px;font-weight:800;letter-spacing:.13em;padding:13px 28px;min-width:166px}.ghost{background:transparent;color:#e0c99d;border:1px solid #a98857;border-radius:4px;padding:12px 18px}.actions{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.result-title{font-size:clamp(24px,4.5vw,34px);color:#f4dfb3}.result-copy{color:#d9c7ad;font-size:13px;line-height:2;white-space:pre-wrap;margin-top:18px}.results{margin:18px 0 0;padding:14px 0;border-top:1px solid #ffffff22;border-bottom:1px solid #ffffff22;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.results small{display:block;font-size:10px;color:#ab9474;margin-bottom:7px}.results strong{font-family:Georgia,serif;font-weight:500;font-size:19px}.result-icon{font-size:49px;filter:drop-shadow(0 4px 15px #000);margin-bottom:8px}
+#loading{z-index:12;background:#14110f;color:#c8b28e;transition:opacity .5s}.spinner{margin:14px auto;border:1px solid #876d4f;border-top:1px solid #f4e6ca;border-radius:50%;width:24px;height:24px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+#problem{display:none;position:absolute;inset:20% 15%;z-index:20;background:#211a15;padding:25px;border:1px solid #aa844f;line-height:2}
+@media(max-width:600px){#app{min-height:480px}#top{padding:17px 15px}#recipe{top:76px;left:16px;font-size:10px}#mode{display:none}#tiltHud{top:110px;width:min(185px,48vw);font-size:10px;padding:9px}#tiltHud small{font-size:9px}.topbtn{padding:8px 10px;font-size:11px}.brand{font-size:13px}.brand .sub{font-size:8px}#tray{gap:2px;padding:6px 4px;border-radius:13px;bottom:max(10px,env(safe-area-inset-bottom))}.tool{padding:8px 1px;gap:3px}.tool .symbol{font-size:25px}.tool .ja{font-size:10px}.tool .en{font-size:7px;letter-spacing:0}#message{bottom:125px;font-size:12px}#message small{font-size:9px}.dialog{padding:28px 23px}.steps{gap:6px}.dialog .lead{font-size:12px}}
+@media(max-height:650px){#message{bottom:119px}#recipe{top:70px}#tray{padding:5px}.tool{padding:5px}.tool .symbol{font-size:23px}.dialog{padding:18px 28px}.dialog .lead{line-height:1.6;margin-bottom:10px}.steps{gap:4px;margin-bottom:10px}}
+
+/* Version 10: tutorial, sound polish, score report, finale */
+#tutorial{position:absolute;left:50%;transform:translateX(-50%);top:clamp(64px,13vh,104px);width:min(370px,calc(100% - 32px));z-index:4;background:rgba(22,19,16,.89);border:1px solid rgba(230,192,128,.38);box-shadow:0 12px 45px #0007;border-radius:11px;padding:12px 14px;pointer-events:auto;backdrop-filter:blur(12px)}
+#tutorial.hidden{display:none}#tutorial .mini{color:#d6ba88;font-size:9px;letter-spacing:.18em}#tutorial h3{margin:5px 0 4px;font-size:14px}#tutorial p{margin:0;color:#d2c1a9;font-size:11px;line-height:1.6}#tutorial .dots{display:flex;gap:5px;margin-top:9px}#tutorial .dots i{flex:1;height:3px;border-radius:2px;background:#665440}#tutorial .dots i.done{background:#dfbd78}#skipTutorial{position:absolute;right:9px;top:6px;border:0;background:transparent;color:#c6ad8c;font-size:19px;padding:1px 6px}
+#finishGlow{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 43%,rgba(255,210,129,.23),transparent 44%);transition:opacity .8s}#finishGlow.active{opacity:1;animation:goldPulse 2.1s ease-in-out infinite alternate}#finaleWords{position:absolute;z-index:6;left:50%;top:26%;transform:translate(-50%,15px);font-family:Georgia,serif;font-size:clamp(18px,3.3vw,31px);letter-spacing:.25em;white-space:nowrap;color:#fae5be;opacity:0;pointer-events:none;text-shadow:0 3px 28px #000}#finaleWords.active{animation:finaleReveal 2.3s ease-out both}@keyframes goldPulse{from{opacity:.15}to{opacity:.65}}@keyframes finaleReveal{0%{opacity:0;transform:translate(-50%,20px)}28%{opacity:1;transform:translate(-50%,0)}76%{opacity:.9}100%{opacity:0;transform:translate(-50%,-12px)}}
+#intro .dialog{max-height:92dvh;overflow-y:auto}#result .dialog{max-width:565px;max-height:min(92dvh,790px);overflow-y:auto;scrollbar-color:#715b3b #211c16}#result .result-icon{font-size:32px;margin-bottom:3px}#result .result-title{font-size:clamp(20px,3vw,29px);margin-bottom:5px}#scoreTotal{font-family:Georgia,serif;font-size:clamp(45px,7vw,65px);color:#f4d397;line-height:1.1}#scoreTotal small{font-size:18px;color:#d4b78e}#scoreGrade{font-size:12px;letter-spacing:.13em;color:#e0ca9f}#scoreBreakdown{text-align:left;margin:12px 0 10px;display:grid;gap:6px}#scoreBreakdown .line{display:grid;grid-template-columns:112px 1fr 47px;gap:9px;align-items:center;font-size:11px;color:#ddc7a7}#scoreBreakdown .bar{height:5px;background:#493725;border-radius:9px;overflow:hidden}#scoreBreakdown .bar i{display:block;height:100%;background:linear-gradient(90deg,#ad8247,#f3d79d);border-radius:9px}#scoreBreakdown .value{text-align:right;font-variant-numeric:tabular-nums;color:#ebd0a1}#scoreTip{margin:9px 0 0;font-size:11px;line-height:1.7;color:#e7d1a5;background:#302719;border-radius:7px;padding:9px 12px;text-align:left}#result .result-copy{font-size:12px;margin-top:8px;line-height:1.55}#result .results{padding:10px 0;margin:11px 0 0}#result .results strong{font-size:17px}#result .actions{margin-top:13px}
+#tutorialToggle{font-size:10px;display:flex;gap:8px;align-items:center;justify-content:center;color:#c8b495;margin:12px 0 0}#tutorialToggle input{accent-color:#dabb7c}#intro .lead{margin-bottom:16px}#intro .steps{margin-bottom:13px}
+@media(max-width:600px){#tutorial{top:67px;left:50%;padding:9px 12px;width:min(330px,calc(100% - 28px))}#tutorial h3{font-size:12px}#tutorial p{font-size:10px}#result .dialog{max-height:94dvh;padding:15px 17px}#scoreBreakdown .line{grid-template-columns:97px 1fr 43px;gap:6px;font-size:10px}#result .actions{margin-top:10px}}
+
+/* HIGHBALL MAKER — quiet in-game view and compact pre-start instructions */
+#intro .dialog{max-width:510px;max-height:calc(100dvh - 32px);overflow-y:auto;scrollbar-width:thin;padding:clamp(22px,3vw,34px) clamp(20px,4vw,36px)}
+#intro .intro-line{display:block;white-space:nowrap}
+#intro h1{font-size:clamp(25px,4vw,37px);letter-spacing:.055em;line-height:1.34;margin:0 0 10px}
+#intro .lead{margin:0 auto 17px;line-height:1.65;font-size:12px}
+.start-guide{text-align:left;border-top:1px solid rgba(255,221,160,.24);border-bottom:1px solid rgba(255,221,160,.24);padding:9px 0 10px;margin:0 auto 20px;max-width:420px}
+.guide-caption{font-family:Georgia,serif;letter-spacing:.22em;color:#dcba80;font-size:10px;margin:0 0 7px}
+.guide-step{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
+.guide-step>span{flex:0 0 24px;color:#d4b881;font:12px Georgia,serif;padding-top:2px}
+.guide-step p{margin:0;color:#cebfa9;font-size:12px;line-height:1.5}
+.guide-step strong{display:block;color:#f3e5ce;font-size:12px;margin-bottom:1px;font-weight:650}
+#intro #startBtn{width:min(100%,250px)}
+/* No basic tutorial, instruction toast or tilt instruction during gameplay. */
+#message,#tutorial,#tiltHud,#iceDropHint{display:none!important}
+@media(max-width:480px){#intro h1{font-size:clamp(22px,6.5vw,29px)}#intro .dialog{padding:19px 19px 21px}.guide-step{padding:4px 0}.guide-step p,.guide-step strong{font-size:11px}#intro .lead{font-size:11px;margin-bottom:12px}}
+@media(max-height:650px){#intro .dialog{padding-top:15px;padding-bottom:15px}#intro h1{font-size:25px;margin-bottom:5px}#intro .lead{margin-bottom:8px}.start-guide{padding:6px 0;margin-bottom:10px}.guide-step{padding:3px 0}}
+
+/* Ver.10.1 — cinematic, uncluttered direct-manipulation UI */
+#recipe,#tray,#tutorial,#mode{display:none!important}
+#message{bottom:max(18px,env(safe-area-inset-bottom));max-width:min(520px,calc(100% - 32px));min-height:0;padding:9px 14px;background:rgba(12,11,10,.47);border-radius:10px;font-size:12px;opacity:0;transform:translate(-50%,7px);transition:opacity .32s,transform .32s;pointer-events:none}
+#message.visible{opacity:.9;transform:translate(-50%,0)}
+#message small{color:#d6c9b6;font-size:10px}
+#result{position:absolute;left:50%;bottom:max(27px,env(safe-area-inset-bottom));z-index:9;transform:translateX(-50%);width:min(660px,calc(100% - 34px));text-align:center;pointer-events:none;opacity:1;transition:opacity .6s,transform .6s;padding:14px 20px;background:linear-gradient(90deg,rgba(22,17,12,.15),rgba(19,15,10,.72) 16%,rgba(19,15,10,.72) 84%,rgba(22,17,12,.15));border-radius:12px;color:#f9e7c7;text-shadow:0 2px 10px #0009;white-space:pre-line;line-height:1.65;font-size:clamp(13px,1.6vw,16px);letter-spacing:.06em}
+#result.hidden{display:none}
+#result strong{display:block;color:#f7d99c;font-weight:650;font-size:clamp(15px,2vw,19px);margin-bottom:3px}
+#result .comment{display:block;color:#f1e5cf;font-size:clamp(12px,1.45vw,14px)}
+#intro .dialog{max-width:470px}
+#intro .lead{margin:20px auto 24px}
+@media(max-width:600px){#result{bottom:max(24px,env(safe-area-inset-bottom));padding:13px 12px;width:calc(100% - 30px)}#message{bottom:max(18px,env(safe-area-inset-bottom));max-width:calc(100% - 32px)}#top{gap:8px}.topright{gap:6px}.topbtn{padding:9px 10px}}
+@media(max-height:620px){#result{bottom:10px;padding:8px 12px}#message{bottom:8px}}
+
+/* Subtle creator credit, intentionally non-interactive. */
+#creatorCredit{position:absolute;right:clamp(9px,1.4vw,18px);bottom:max(8px,env(safe-area-inset-bottom));z-index:11;pointer-events:none;user-select:none;color:rgba(234,220,201,.29);font:400 9px/1.2 system-ui,"Yu Gothic",sans-serif;letter-spacing:.045em;white-space:nowrap}
+@media(max-width:600px){#creatorCredit{font-size:8px;right:9px;bottom:max(6px,env(safe-area-inset-bottom))}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="app">
+  <div id="scene" aria-label="3Dバーのグラス操作エリア"></div><div id="vignette"></div><div id="grain"></div>
+  <header id="top">
+    <div class="brand">HIGHBALL <span style="color:#c09a5b">MAKER</span><span class="sub">一杯、つくろう。</span></div>
+    <div class="topright"><button class="topbtn" id="soundBtn" aria-label="音声切り替え">♪ ON</button><button class="topbtn finish" id="finishBtn">完成する →</button></div>
+  </header>
+  <div id="recipe"><span class="tag">TODAY'S GLASS</span><div>氷 <b id="iceValue">0</b> 個</div><div>ウイスキー <b id="whiskyValue">0</b> ml</div><div>炭酸水 <b id="sodaValue">0</b> ml</div><div>注げる残量 <b id="capacityValue">340</b> ml</div></div>
+  <div id="message" role="status">アイスペールの氷から始めよう。<small>大きな氷を約10〜12個。トングをグラスの近くで離せば入ります。</small></div>
+  <aside id="tutorial" class="hidden" aria-live="polite"><button id="skipTutorial" aria-label="チュートリアルを閉じる" title="閉じる">×</button><div class="mini" id="tutorialStep">STEP 1 / 4</div><h3 id="tutorialTitle">氷を入れよう</h3><p id="tutorialBody">トングで氷をグラスへ。タップでも追加できます。</p><div class="dots" id="tutorialDots"><i></i><i></i><i></i><i></i></div></aside>
+  <div id="finishGlow" aria-hidden="true"></div><div id="finaleWords" aria-hidden="true">THE PERFECT POUR</div>
+  <div id="mode"><span class="led"></span>BAR SIMULATION</div><div id="iceDropHint" aria-hidden="true">ここで離すと自動投入 ↓</div><div id="tiltHud" aria-live="off"><span>ボトルをグラスに近づけて傾ける</span><div class="meter"><i></i></div><small>指を離すと注ぐ動作が止まります</small></div>
+  <section class="modal" id="loading"><div style="text-align:center;font-family:Georgia,serif;letter-spacing:.18em">HIGHBALL MAKER<div class="spinner"></div><small style="font-family:system-ui;letter-spacing:.05em">グラスを用意しています…</small></div></section>
+  <section class="modal hidden" id="intro" aria-modal="true" role="dialog" aria-labelledby="introTitle"><div class="dialog">
+    <div class="eyebrow">HIGHBALL MAKER</div>
+    <h1 id="introTitle"><span class="intro-line">あなたがつくる、</span><span class="intro-line">最高の一杯。</span></h1>
+    <p class="lead">氷が鳴る。琥珀色が揺れる。<br>その一杯を、あなたの手で。</p>
+    <div class="start-guide" aria-label="作り方">
+      <div class="guide-caption">HOW TO MAKE</div>
+      <div class="guide-step"><span>01</span><p><strong>氷を入れる</strong>左のアイスペールをタップ、またはトングで氷を運ぶ。</p></div>
+      <div class="guide-step"><span>02</span><p><strong>ウイスキーを注ぐ</strong>ボトルをグラスへドラッグして傾ける。</p></div>
+      <div class="guide-step"><span>03</span><p><strong>炭酸水を注ぐ</strong>赤いボトルを動かして、静かに注ぐ。</p></div>
+      <div class="guide-step"><span>04</span><p><strong>軽く混ぜて完成</strong>マドラーをタップし、グラス内を上下にドラッグ。最後に「完成する」。</p></div>
+    </div>
+    <button class="primary" id="startBtn">ゲームスタート</button>
+  </div></section>
+  <div id="creatorCredit" aria-label="作成者 YANSON77">作成者　YANSON77</div>
+  <output id="result" class="hidden" role="status" aria-live="polite"><span id="resultText"></span></output>
+  <section id="problem">3D表示を読み込めませんでした。インターネットに接続し、Chrome または Edge で開き直してください。<br><button class="primary" onclick="location.reload()">再読み込み</button></section>
+</div>
+<script>
+setTimeout(()=>{if(!window.__highballReady){document.getElementById('loading').style.display='none';document.getElementById('problem').style.display='block'}},16000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const $ = id => document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x171310);scene.fog=new THREE.FogExp2(0x171310,0.028);
+const camera=new THREE.PerspectiveCamera(38,1,.1,65);camera.position.set(1.68,3.78,9.15);camera.lookAt(.18,1.38,-.03);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,window.innerWidth<700?1.25:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+$('scene').appendChild(renderer.domElement);
+const pmrem=new THREE.PMREMGenerator(renderer);const room=new RoomEnvironment();const env=pmrem.fromScene(room,.06);scene.environment=env.texture;room.dispose();pmrem.dispose();
+scene.add(new THREE.HemisphereLight(0xffe9d0,0x261e1e,1.45));
+const key=new THREE.DirectionalLight(0xfff1dc,3.0);key.position.set(-3,6,5);key.castShadow=true;key.shadow.mapSize.set(768,768);key.shadow.camera.left=-5;key.shadow.camera.right=5;key.shadow.camera.top=5;key.shadow.camera.bottom=-5;key.shadow.normalBias=.04;scene.add(key);
+const side=new THREE.PointLight(0xb9e2ff,44,11,2);side.position.set(2.8,4.0,-2.2);scene.add(side);
+const warm=new THREE.PointLight(0xffc071,38,10,2);warm.position.set(-3.0,3.65,-1.0);scene.add(warm);
+const back=new THREE.Mesh(new THREE.PlaneGeometry(25,13),new THREE.MeshStandardMaterial({color:0x26221d,roughness:.94}));back.position.set(0,4,-5.1);scene.add(back);
+const lightBar=new THREE.Mesh(new THREE.BoxGeometry(9,.05,.05),new THREE.MeshBasicMaterial({color:0xc18b47}));lightBar.position.set(0,3.65,-4.55);scene.add(lightBar);
+const edgeFill=new THREE.DirectionalLight(0xe9f4ff,1.65);edgeFill.position.set(0.7,4.5,-5);scene.add(edgeFill);
+// Rear glow blobs removed to keep the background clean and avoid shadow-like patterns.
+// Rich wood grain, generated in code. No borrowed photographic assets.
+function woodTexture(){const c=document.createElement('canvas');c.width=1024;c.height=512;const ctx=c.getContext('2d');ctx.fillStyle='#493021';ctx.fillRect(0,0,1024,512);let seed=9823;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};for(let i=0;i<600;i++){const yy=rnd()*512;ctx.beginPath();ctx.moveTo(0,yy);for(let x=0;x<=1024;x+=32)ctx.lineTo(x,yy+Math.sin(x*.008+i*.49)*rnd()*2.1);ctx.strokeStyle=i%3===0?'rgba(211,150,84,.095)':'rgba(15,7,3,.12)';ctx.lineWidth=.3+rnd()*1.9;ctx.stroke()}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1.8,2);t.anisotropy=8;return t}
+const tableMat=new THREE.MeshStandardMaterial({map:woodTexture(),color:0xa78768,roughness:.38,metalness:.04});
+const tabletop=new THREE.Mesh(new THREE.BoxGeometry(16,.32,12),tableMat);tabletop.position.y=-.11;tabletop.receiveShadow=true;scene.add(tabletop);
+const lip=new THREE.Mesh(new THREE.BoxGeometry(16,.075,.12),new THREE.MeshStandardMaterial({color:0x976540,roughness:.27}));lip.position.set(0,-.24,5.96);scene.add(lip);
+const coaster=new THREE.Group();scene.add(coaster);const coasterMat=new THREE.MeshStandardMaterial({color:0x352820,roughness:.55,metalness:.03});const coasterBase=new THREE.Mesh(new THREE.CylinderGeometry(1.08,1.07,.07,96),coasterMat);coasterBase.position.y=.064;coasterBase.receiveShadow=true;coaster.add(coasterBase);
+const coasterRing=new THREE.Mesh(new THREE.TorusGeometry(.96,.008,8,120),new THREE.MeshStandardMaterial({color:0xb69767,metalness:.55,roughness:.35}));coasterRing.rotation.x=Math.PI/2;coasterRing.position.y=.105;coaster.add(coasterRing);
+// Classic straight highball glass: open top, thick base, and high visibility.
+const glass=new THREE.Group();scene.add(glass);
+const glassMat=new THREE.MeshPhysicalMaterial({color:0xf2fbff,metalness:0,roughness:.042,transparent:true,opacity:.108,depthWrite:false,side:THREE.DoubleSide,clearcoat:1,clearcoatRoughness:.024,envMapIntensity:2.05});glassMat.forceSinglePass=true;
+const gp=[[0,.105],[.61,.105],[.69,.14],[.75,.24],[.79,1.12],[.81,2.34],[.81,2.56],[.79,2.61],[.76,2.64],[.72,2.62],[.70,2.56],[.69,.38],[.63,.27],[.57,.24],[0,.24],[0,.105]].map(([r,y])=>new THREE.Vector2(r,y));
+const body=new THREE.Mesh(new THREE.LatheGeometry(gp,100),glassMat);body.renderOrder=18;glass.add(body);
+const rim=new THREE.Mesh(new THREE.TorusGeometry(.807,.028,12,112),new THREE.MeshPhysicalMaterial({color:0xf8fdff,roughness:.045,transparent:true,opacity:.84,depthWrite:false,clearcoat:1}));rim.rotation.x=Math.PI/2;rim.position.y=2.60;rim.renderOrder=21;glass.add(rim);
+const foot=new THREE.Mesh(new THREE.CylinderGeometry(.71,.68,.11,96),new THREE.MeshPhysicalMaterial({color:0xcfe6ef,roughness:.03,transparent:true,opacity:.42,depthWrite:false,clearcoat:1}));foot.position.y=.158;foot.renderOrder=20;glass.add(foot);
+// Vertical stripe decoration removed for a cleaner glass.
+const etchMat=new THREE.MeshBasicMaterial({color:0xf9feff,transparent:true,opacity:.11,depthWrite:false});
+for(const y of [.46,2.18]){const band=new THREE.Mesh(new THREE.TorusGeometry(.795,.009,6,96),etchMat);band.rotation.x=Math.PI/2;band.position.y=y;band.renderOrder=21;glass.add(band)}
+// A few faint droplets remain on the outer glass, but do not hide the ice behind them.
+const condensation=new THREE.InstancedMesh(new THREE.SphereGeometry(1,7,6),new THREE.MeshPhysicalMaterial({color:0xe1f5ff,roughness:.12,transparent:true,opacity:.22,depthWrite:false,ior:1.34,thickness:.012,clearcoat:.65}),56);
+const dmy=new THREE.Object3D();for(let i=0;i<56;i++){const y=.36+Math.random()*1.94, a=Math.random()*Math.PI*2,r=.79;const q=.005+Math.random()*.007;dmy.position.set(Math.cos(a)*(r+.012),y,Math.sin(a)*(r+.012));dmy.scale.set(q,q*(1.1+Math.random()*.8),q*.7);dmy.updateMatrix();condensation.setMatrixAt(i,dmy.matrix)}condensation.visible=false;condensation.renderOrder=22;glass.add(condensation);
+// Crystal-clear soda and transparent amber whisky. A single front-facing shell avoids double-blending.
+const drinkMat=new THREE.MeshPhysicalMaterial({color:0xe0ab57,metalness:0,roughness:.075,transparent:true,opacity:.52,depthWrite:false,side:THREE.FrontSide,clearcoat:.82,clearcoatRoughness:.032,envMapIntensity:.92,transmission:.08,thickness:.30,ior:1.34});
+const drink=new THREE.Mesh(new THREE.CylinderGeometry(.785,.68,1,80,1,false),drinkMat);drink.renderOrder=3;scene.add(drink);
+const sodaColor=new THREE.Color(0xfcfffd),whiskyColor=new THREE.Color(0xc87514);
+const surfaceMat=new THREE.MeshPhysicalMaterial({color:0xf3d092,roughness:.042,transparent:true,opacity:.23,depthWrite:false,side:THREE.DoubleSide,clearcoat:.9});
+const surface=new THREE.Mesh(new THREE.CircleGeometry(1,96),surfaceMat);surface.rotation.x=-Math.PI/2;surface.renderOrder=9;scene.add(surface);
+const surfaceBase=new Float32Array(surface.geometry.attributes.position.array);
+const meniscus=new THREE.Mesh(new THREE.TorusGeometry(1,.010,6,96),new THREE.MeshBasicMaterial({color:0xffe4b5,transparent:true,opacity:.28,depthWrite:false}));meniscus.rotation.x=Math.PI/2;meniscus.renderOrder=10;scene.add(meniscus);
+// Larger rocks (about 1.45x linear size) with realistic imperfect corners, inner frost and translucent fractures.
+// Ice visibility: a translucent clear-blue body, dark-cool contour and bright highlights.
+// Higher opacity with lower transmission restores separation from the liquid, without painting ice white.
+const ICE_VISIBILITY={bodyOpacity:.56,transmission:.34,outlineOpacity:.39,crackOpacity:.32};
+const iceMat=new THREE.MeshPhysicalMaterial({color:0xd9eff9,roughness:.038,metalness:0,transparent:true,opacity:ICE_VISIBILITY.bodyOpacity,transmission:ICE_VISIBILITY.transmission,thickness:.24,depthWrite:false,ior:1.31,clearcoat:1,clearcoatRoughness:.028,envMapIntensity:2.15});
+// Pack the glass in alternating layers; varied dimensions, shapes and angles.
+// The stopping rule comes from available volume and free 3D slots, not "6 cubes".
+const coreMat=new THREE.MeshBasicMaterial({color:0xf4fcff,transparent:true,opacity:.045,depthWrite:false});
+const crackMat=new THREE.LineBasicMaterial({color:0xf6fdff,transparent:true,opacity:ICE_VISIBILITY.crackOpacity,depthWrite:false});
+const iceSlots=[];
+// Larger clear ice means fewer trips with the tongs. The collision hull and
+// displacement volume are computed from these exact model dimensions.
+const ICE_SIZE_MULTIPLIER=1.45;
+const ICE_IDEAL_MIN=10;
+const ICE_VISUAL_LIMIT=12;
+// Irregular ice sizes and shapes, prepared in advance; actual resting positions are determined by collisions.
+let iceSeed=18971;const iceRand=()=>{iceSeed=(Math.imul(1664525,iceSeed)+1013904223)>>>0;return iceSeed/4294967296};
+for(let i=0;i<ICE_VISUAL_LIMIT;i++){
+ const size=(.255+iceRand()*.14)*ICE_SIZE_MULTIPLIER;
+ const w=size*(.86+iceRand()*.28),h=size*(.78+iceRand()*.31),d=size*(.83+iceRand()*.25);
+ iceSlots.push({base:new THREE.Vector3(0,.4,0),w,h,d});
+}
+function irregularIceGeometry(slot,i){
+ const geo=new RoundedBoxGeometry(slot.w,slot.h,slot.d,4,Math.min(.084,slot.w*.22));
+ const pos=geo.getAttribute('position');
+ for(let j=0;j<pos.count;j++){
+  const x=pos.getX(j),y=pos.getY(j),z=pos.getZ(j);
+  // Smooth faceting: repeatable variation at the original vertex position to preserve shared seams.
+  const noise=Math.sin(x*31+i*1.71)*Math.sin(y*28-i*.79)*Math.cos(z*35+i*.91);
+  const chip=1+.028*noise+.021*Math.sin(x*13+y*17+z*9+i*2.1);
+  pos.setXYZ(j,x*chip,y*chip,z*chip);
+ }
+ geo.computeVertexNormals();return geo;
+}
+const cubes=iceSlots.map((slot,i)=>{
+ const g=new THREE.Group();
+ const outer=new THREE.Mesh(irregularIceGeometry(slot,i),iceMat);
+ outer.renderOrder=6;g.add(outer);
+ const core=new THREE.Mesh(new THREE.IcosahedronGeometry(slot.w*.24,1),coreMat);
+ core.scale.set(1,.75,.86);core.renderOrder=7;g.add(core);
+ const fragments=[new THREE.Vector3(-slot.w*.28,-slot.h*.20,-.02),new THREE.Vector3(.01,0,.03),new THREE.Vector3(.01,0,.03),new THREE.Vector3(slot.w*.30,slot.h*.22,.04),new THREE.Vector3(.01,0,.03),new THREE.Vector3(slot.w*.18,-slot.h*.17,-.07),new THREE.Vector3(-slot.w*.12,slot.h*.29,slot.d*.1),new THREE.Vector3(slot.w*.13,slot.h*.09,slot.d*.18)];
+ const cracks=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(fragments),crackMat);
+ cracks.renderOrder=8;cracks.rotation.y=i*.41;g.add(cracks);
+ // Short specular accents on two corners, rather than an opaque ice-colored face.
+ const glintPoints=[new THREE.Vector3(-slot.w*.32,slot.h*.28,slot.d*.37),new THREE.Vector3(-slot.w*.16,slot.h*.36,slot.d*.38),new THREE.Vector3(slot.w*.20,-slot.h*.31,slot.d*.39),new THREE.Vector3(slot.w*.33,-slot.h*.20,slot.d*.40)];
+ const glints=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(glintPoints),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.46,depthWrite:false}));
+ glints.renderOrder=9;g.add(glints);
+ const edges=new THREE.LineSegments(new THREE.EdgesGeometry(outer.geometry,36),new THREE.LineBasicMaterial({color:0x95c4d6,transparent:true,opacity:ICE_VISIBILITY.outlineOpacity,depthWrite:false}));edges.renderOrder=9;g.add(edges);
+ g.visible=false;scene.add(g);
+ g.userData={vel:new THREE.Vector3(),ang:new THREE.Vector3(),radius:Math.max(slot.w,slot.h,slot.d)*.52,ext:new THREE.Vector3(slot.w*.46,slot.h*.46,slot.d*.46),base:slot.base,rot:new THREE.Euler((i%5-2)*.13,i*.72,(i%4-1.5)*.12),volume:slot.w*slot.h*slot.d*76,fall:false,impact:false,age:0};
+ g.rotation.copy(g.userData.rot);
+ return g;
+});
+// Individual animated sparkling bubbles in a single instanced draw call.
+const BUBBLE_COUNT=240;const bubbleGeo=new THREE.SphereGeometry(1,7,6);const bubbles=new THREE.InstancedMesh(bubbleGeo,new THREE.MeshBasicMaterial({color:0xf3fdff,transparent:true,opacity:.38,depthWrite:false}),BUBBLE_COUNT);bubbles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(bubbles);const bD=new THREE.Object3D();const bubbleData=[];for(let i=0;i<BUBBLE_COUNT;i++)bubbleData.push({a:Math.random()*Math.PI*2,r:.05+Math.random()*.70,s:.28+Math.random()*.56,shift:Math.random(),size:.005+Math.random()*.011});bubbles.visible=false;bubbles.renderOrder=11;
+// Translucent surface micro-foam, seen briefly during vigorous soda pouring.
+const FOAM_COUNT=55,foamData=[];
+const foamMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,6,5),new THREE.MeshBasicMaterial({color:0xf8ffff,transparent:true,opacity:.26,depthWrite:false}),FOAM_COUNT);
+const foamDummy=new THREE.Object3D();for(let i=0;i<FOAM_COUNT;i++)foamData.push({theta:Math.random()*Math.PI*2,r:Math.sqrt(Math.random())*.72,size:.012+Math.random()*.016,offset:Math.random()*Math.PI*2});
+foamMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);foamMesh.renderOrder=12;foamMesh.visible=false;scene.add(foamMesh);
+// Bubbles attaching to ice edges, in addition to rising free bubbles.
+const ICE_BUBBLE_COUNT=80,edgeBubbleDummy=new THREE.Object3D();
+const edgeBubbles=new THREE.InstancedMesh(new THREE.SphereGeometry(1,6,5),new THREE.MeshBasicMaterial({color:0xf6fbff,transparent:true,opacity:.36,depthWrite:false}),ICE_BUBBLE_COUNT);
+edgeBubbles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);edgeBubbles.renderOrder=12;edgeBubbles.visible=false;scene.add(edgeBubbles);
+// Tool models: tangible objects on the counter.
+const selectable=[];function registerTool(group,id){group.userData.tool=id;group.traverse(o=>{if(o.isMesh)selectable.push(o)})}
+function metal(color){return new THREE.MeshStandardMaterial({color,metalness:.8,roughness:.23})}
+const silver=metal(0xc3c8c6),darkMetal=metal(0x686b6b),goldMetal=metal(0xca9c5e);
+function cylinder(rt,rb,h,mat,x,y,z,segments=48){let m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,segments),mat);m.position.set(x,y,z);m.castShadow=(h>=.5&&rt>=.27);return m}
+// Brand-free bottles use only general silhouettes and color. No emblems, labels with text, or product marks.
+function roundedBox(w,h,d,rad,mat,x=0,y=0,z=0){const o=new THREE.Mesh(new RoundedBoxGeometry(w,h,d,5,Math.min(rad,w*.44,h*.44,d*.44)),mat);o.position.set(x,y,z);o.castShadow=(w>.30&&h>.44&&d>.24);return o}
+const whiskyBottle=new THREE.Group();whiskyBottle.position.set(2.08,.13,-1.45);scene.add(whiskyBottle);
+const amberMat=new THREE.MeshPhysicalMaterial({color:0x9f5915,metalness:.025,roughness:.095,transparent:true,opacity:.89,clearcoat:1,transmission:.07,ior:1.45});
+whiskyBottle.add(roundedBox(.83,1.46,.65,.11,amberMat,0,.88,0));
+const shoulder=new THREE.Mesh(new THREE.CylinderGeometry(.175,.48,.38,4),amberMat);shoulder.rotation.y=Math.PI/4;shoulder.position.y=1.785;whiskyBottle.add(shoulder);
+whiskyBottle.add(cylinder(.145,.15,.38,amberMat,0,2.135,0,24));
+const darkCap=new THREE.MeshStandardMaterial({color:0x24201b,roughness:.42,metalness:.16});
+whiskyBottle.add(cylinder(.171,.171,.23,darkCap,0,2.43,0,32));
+const flatCream=new THREE.MeshStandardMaterial({color:0xe9cc83,roughness:.68,side:THREE.DoubleSide});
+whiskyBottle.add(roundedBox(.65,.65,.025,.025,flatCream,0,.98,.341));
+const borderMat=new THREE.MeshStandardMaterial({color:0x6f3417,roughness:.57});
+whiskyBottle.add(roundedBox(.56,.045,.027,.006,borderMat,0,1.22,.365));
+whiskyBottle.add(roundedBox(.56,.045,.027,.006,borderMat,0,.74,.365));
+const amberStripe=new THREE.MeshStandardMaterial({color:0xd4a551,roughness:.4,metalness:.2});
+whiskyBottle.add(roundedBox(.25,.20,.028,.05,amberStripe,0,.98,.367));
+registerTool(whiskyBottle,'whisky');
+const sodaBottle=new THREE.Group();sodaBottle.position.set(3.61,.10,.30);scene.add(sodaBottle);
+const petMat=new THREE.MeshPhysicalMaterial({color:0xe3f4fb,roughness:.055,transparent:true,opacity:.30,depthWrite:false,metalness:0,clearcoat:.95,ior:1.43});
+const paleDrink=new THREE.MeshPhysicalMaterial({color:0xe5f5fc,roughness:.06,transparent:true,opacity:.30,depthWrite:false});
+sodaBottle.add(cylinder(.335,.36,1.33,paleDrink,0,.79,0,48));
+sodaBottle.add(cylinder(.37,.38,1.39,petMat,0,.81,0,48));
+sodaBottle.add(cylinder(.138,.37,.34,petMat,0,1.68,0,48));
+sodaBottle.add(cylinder(.133,.143,.35,petMat,0,1.99,0,40));
+const whiteCap=new THREE.MeshStandardMaterial({color:0xf5f6f3,roughness:.42});sodaBottle.add(cylinder(.164,.164,.23,whiteCap,0,2.26,0));
+const redBand=new THREE.MeshStandardMaterial({color:0xb71229,roughness:.38,metalness:.03});sodaBottle.add(cylinder(.379,.388,.57,redBand,0,.96,0,56));
+const redHighlight=new THREE.MeshBasicMaterial({color:0xfd7b75,transparent:true,opacity:.46});
+sodaBottle.add(cylinder(.382,.391,.035,redHighlight,0,1.24,0,56));
+for(let j=0;j<5;j++){const y=.22+j*.092;const ring=new THREE.Mesh(new THREE.TorusGeometry(.373-j*.004,.013,8,64),new THREE.MeshStandardMaterial({color:0xd2e7ed,roughness:.16,transparent:true,opacity:.46}));ring.rotation.x=Math.PI/2;ring.position.y=y;sodaBottle.add(ring)}
+registerTool(sodaBottle,'soda');
+// Glossy black ice bucket, hollow opening, ice exposed on the top.
+const iceBucket=new THREE.Group();iceBucket.position.set(-2.70,.125,.10);scene.add(iceBucket);
+const bucketMat=new THREE.MeshPhysicalMaterial({color:0x151a1b,roughness:.18,metalness:.45,clearcoat:.8,clearcoatRoughness:.05});
+const bucketOuter=new THREE.Mesh(new THREE.CylinderGeometry(.69,.58,.96,72,1,true),bucketMat);bucketOuter.position.y=.59;bucketOuter.castShadow=true;iceBucket.add(bucketOuter);
+const bucketBottom=cylinder(.595,.59,.05,bucketMat,0,.13,0,72);iceBucket.add(bucketBottom);
+const bucketInner=new THREE.Mesh(new THREE.CylinderGeometry(.604,.535,.80,72,1,true),new THREE.MeshStandardMaterial({color:0x343f43,metalness:.55,roughness:.32,side:THREE.BackSide}));bucketInner.position.y=.58;iceBucket.add(bucketInner);
+const interior=new THREE.Mesh(new THREE.CircleGeometry(.60,72),new THREE.MeshStandardMaterial({color:0x344348,metalness:.52,roughness:.25}));interior.rotation.x=-Math.PI/2;interior.position.y=.93;iceBucket.add(interior);
+const bucketRim=new THREE.Mesh(new THREE.TorusGeometry(.675,.039,12,80),silver);bucketRim.rotation.x=Math.PI/2;bucketRim.position.y=1.06;iceBucket.add(bucketRim);
+const hingeMat=new THREE.MeshStandardMaterial({color:0x535a59,metalness:.76,roughness:.23});
+for(const x of [-.69,.69]){const hinge=cylinder(.091,.09,.16,hingeMat,x,.90,0,20);hinge.rotation.z=Math.PI/2;iceBucket.add(hinge)}
+const archPath=new THREE.CatmullRomCurve3([new THREE.Vector3(-.7,.91,0),new THREE.Vector3(-.7,1.43,0),new THREE.Vector3(-.47,2.01,0),new THREE.Vector3(0,2.20,0),new THREE.Vector3(.47,2.01,0),new THREE.Vector3(.7,1.43,0),new THREE.Vector3(.7,.91,0)]);
+const arch=new THREE.Mesh(new THREE.TubeGeometry(archPath,50,.033,9,false),silver);iceBucket.add(arch);
+const iceRestShapes=[];
+for(let i=0;i<13;i++){const ang=i*2.4,rad=(.12+.28*((i*7)%9)/9);const w=.34+(i%4)*.055;const chip=new THREE.Mesh(new RoundedBoxGeometry(w,.32+.055*(i%3),.34+(i%2)*.09,4,.065),iceMat);chip.position.set(Math.cos(ang)*rad,1.05+.09*(i%4),Math.sin(ang)*rad);chip.rotation.set(i*.29,i*.6,i*.12);iceBucket.add(chip);iceRestShapes.push(chip)}
+// Open, metallic ice tongs hang from the right edge of the bucket.
+const tongs=new THREE.Group();scene.add(tongs);
+const tongRest=new THREE.Vector3(-1.92,.825,.25),tongRestAngle=-.23;
+tongs.position.copy(tongRest);tongs.rotation.z=tongRestAngle;
+for(let j of [-1,1]){const arm=new THREE.Mesh(new THREE.CylinderGeometry(.019,.019,.84,10),silver);arm.position.set(j*.12,-.02,0);arm.rotation.z=j*.10;tongs.add(arm);const blade=roundedBox(.12,.23,.05,.021,silver,j*.22,-.44,0);tongs.add(blade)}
+const tongGrip=new THREE.Mesh(new THREE.TorusGeometry(.070,.021,8,18),silver);tongGrip.position.y=.39;tongs.add(tongGrip);
+registerTool(iceBucket,'ice');
+// Separate raycast handle for the tongs; keep the bucket tappable behind it.
+const tongHit=new THREE.Mesh(new THREE.BoxGeometry(.56,1.32,.56),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false}));
+tongHit.position.set(0,-.07,0);tongs.add(tongHit);
+// The carried ice is an actual glassy pebble, held between the jaws.
+const heldRock=new THREE.Mesh(new RoundedBoxGeometry(.43,.42,.43,4,.085),iceMat);
+heldRock.position.set(0,-.55,0);heldRock.rotation.set(.2,.5,-.1);tongs.add(heldRock);heldRock.visible=false;
+registerTool(tongs,'tongs');
+// Long twisted bar spoon: its working end reaches the bottom of the tall glass,
+// while the handle remains clearly visible above the rim. Stored in the ice bucket.
+const spoonTool=new THREE.Group();scene.add(spoonTool);
+const SPOON_LENGTH=3.13; // Glass rim is y=2.60; former spoon was only ~1.97 units long.
+const stemBase=.16,stemTop=SPOON_LENGTH-.22;
+const spoonStem=cylinder(.022,.022,stemTop-stemBase,silver,0,(stemBase+stemTop)/2,0,14);spoonTool.add(spoonStem);
+const spoonHead=new THREE.Mesh(new THREE.SphereGeometry(.089,16,14),silver);spoonHead.scale.set(.80,1.15,.55);spoonHead.position.y=.075;spoonTool.add(spoonHead);
+// Extend the twisted grip for the full length, instead of stretching the tip.
+for(let k=0;k<2;k++){
+ const pts=[];
+ for(let j=0;j<=120;j++){
+  const t=j/120,a=t*Math.PI*19+k*Math.PI;
+  pts.push(new THREE.Vector3(Math.cos(a)*.031,.36+t*(SPOON_LENGTH-.67),Math.sin(a)*.031));
+ }
+ spoonTool.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),128,.0065,5,false),darkMetal));
+}
+const spoonFork=new THREE.Group();spoonFork.position.y=SPOON_LENGTH-.19;spoonTool.add(spoonFork);
+for(const x of [-.05,0,.05]){const tine=roundedBox(.021,.18,.032,.008,silver,x,.08,0);spoonFork.add(tine)}
+// Extra-wide, invisible pointer target: the physical spoon is too thin for tapping.
+const spoonHit=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,SPOON_LENGTH,12),new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));
+spoonHit.position.y=SPOON_LENGTH*.50;spoonTool.add(spoonHit);
+// Tip sits inside the black ice bucket. The long shaft leans outward, away from the glass.
+const spoonRestPosition=new THREE.Vector3(-2.67,.50,.10);
+const spoonRestRotation=new THREE.Euler(0,0,-.41);
+spoonTool.position.copy(spoonRestPosition);spoonTool.rotation.copy(spoonRestRotation);
+registerTool(spoonTool,'stir');
+// No citrus prop in this placement. The chosen arrangement mirrors the supplied reference sheet.
+// The reference arrangement has no lemon or branded text on the products.
+const streamMat=new THREE.MeshPhysicalMaterial({color:0xc68035,roughness:.08,transparent:true,opacity:.88,depthWrite:false,clearcoat:.85});
+const pourStream=new THREE.Group();scene.add(pourStream);pourStream.visible=false;
+const streamParts=[];
+for(let i=0;i<8;i++){
+ const part=new THREE.Mesh(new THREE.CylinderGeometry(.028,.037,1,10),streamMat);
+ pourStream.add(part);streamParts.push(part);
+}
+function drawPourFlow(source,target,kind,strength,time){
+ const bend=kind==='whisky'?.08:.045;
+ const points=[];
+ for(let i=0;i<=8;i++){
+  const t=i/8;
+  // A gently falling, narrowing stream rather than a diagonal rigid cylinder.
+  const pos=source.clone().lerp(target,t);
+  pos.x+=Math.sin(t*Math.PI)*bend;
+  pos.z+=Math.sin(t*Math.PI*2+time*6)*(.012+strength*.007);
+  points.push(pos);
+ }
+ for(let i=0;i<8;i++){
+  const a=points[i],b=points[i+1],dir=b.clone().sub(a),p=streamParts[i];
+  p.position.copy(a).add(b).multiplyScalar(.5);
+  p.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+  p.scale.set((1-i*.047)*(.66+.36*strength),dir.length(),(1-i*.047)*(.66+.36*strength));
+ }
+ streamMat.color.setHex(kind==='whisky'?0xb7712d:0xcde6ee);
+ streamMat.opacity=kind==='whisky'?.78:.47;
+ pourStream.visible=true;
+}
+const splash=new THREE.Group();scene.add(splash);const splashMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.66,depthWrite:false});const splashParts=[];for(let i=0;i<10;i++){const p=new THREE.Mesh(new THREE.SphereGeometry(.016,7,5),splashMat);splash.add(p);splashParts.push(p)}splash.visible=false;
+// No second floating spoon: the countertop muddler is the one used in the glass.
+// State & outcome: the player sees a drink, not a running numerical score.
+const s={ice:0,iceVolume:0,whisky:0,soda:0,stir:0,overflow:0,first:null,mix:0,started:false,finished:false,pour:null,selected:'ice',clock:0,drag:null,iceBeforeWhisky:true,spoonActive:false,spoonLift:0,spoonX:.31,spoonZ:.06,manual:false,reach:0,tilt:0,pourRate:0,lastSodaTime:-100,
+ tongsActive:false,tongsReady:false,fizz:0,foam:0,stirSoundAt:0,cinematic:0,cinematicShown:false,spoonPreviewUntil:0,co2Loss:0,scorePourMl:0,scoreGentleSodaMl:0,scorePourStarts:0,nextFizzSound:0,playStartedAt:0,firstPoured:null,sodaHasPoured:false,whiskyHasPoured:false,whiskyAfterSoda:false,scoreManualSodaMl:0,scoreSlowSodaMl:0,scoreFastSodaMl:0};
+let liquidHeight=0,splashTime=0,shake=0,movingTool=null,soundEnabled=true,audioCtx=null,audioMaster=null,audioLimiter=null;let barTime=0;
+let waveEnergy=0,waveX=0,waveZ=0,stirTime=0;
+const displayInstructions={ice:['大きな氷を約10〜12個でグラスいっぱいに。','トングをグラスの近くで離せば自動投入。アイスペールのタップでも追加できます。'],whisky:['琥珀色のボトルをグラスに向けてドラッグ。','グラス上まで運んで傾けると注げます。ボタン長押しもOK。'],soda:['赤帯の炭酸ボトルをグラスに向けてドラッグ。','ボトルをグラス上まで運んで傾けよう。ボタン長押しもOK。'],stir:['マドラーを取り出しました。','グラス内を上下にドラッグすると氷と液面が動きます。']};
+let hintTimer=null;
+function hint(str,sub=''){/* Instructions are shown only before starting. */}
+function updateTutorial(){}
+function selectTool(id){if(s.finished)return;stopPour();s.selected=id;const inst=displayInstructions[id];if(inst)hint(inst[0],inst[1]);if(id!=='stir'){s.spoonActive=false;s.spoonPreviewUntil=0;}else if(s.started){s.spoonPreviewUntil=s.clock+1.45;s.spoonX=.27;s.spoonZ=.04;s.spoonLift=.10;softClink();}}
+// Approximate 340 ml tumbler. Packed ice displaces SOME volume, not all space.
+// Even a brim-full glass of ice leaves room for ~230 ml of liquid in its gaps.
+const MAX_GLASS_ML=340;
+const ICE_VISUAL_CAP=ICE_VISUAL_LIMIT; // visually packed after ~10–12 large cubes
+function maxDrink(){return Math.max(0,MAX_GLASS_ML-s.iceVolume)}
+function level(){return clamp((s.whisky+s.soda)/Math.max(1,maxDrink()),0,1)}
+function refresh(){
+ const h=level()*2.26;liquidHeight=h;
+ const present=s.whisky+s.soda>.05;
+ drink.visible=surface.visible=meniscus.visible=present;
+ drink.position.set(0,.285+h/2,0);
+ drink.scale.y=Math.max(.001,h);
+ const topR=.71+h*.029;
+ drink.scale.x=topR/.785;drink.scale.z=topR/.785;
+ surface.position.y=.286+h;surface.scale.set(topR,topR,1);
+ meniscus.position.y=.29+h;meniscus.scale.set(topR,topR,topR);
+ const ratio=s.whisky/Math.max(1,s.whisky+s.soda);
+ const amber=clamp(.18+Math.pow(ratio,0.76)*1.05,0,1);
+ drinkMat.color.copy(sodaColor).lerp(whiskyColor,amber);
+ drinkMat.opacity=.20+amber*.26; // keep it transparent, with a light amber tint even when soda is dominant
+ surfaceMat.color.copy(sodaColor).lerp(whiskyColor,Math.min(1,amber*.92));
+ surfaceMat.opacity=.13+amber*.10;
+ meniscus.material.color.copy(surfaceMat.color);
+ meniscus.material.opacity=.14+amber*.11;
+ cubes.forEach((g,i)=>{g.visible=i<s.ice});
+ condensation.visible=s.ice>0;
+ bubbles.visible=s.soda>0&&present;
+ // Numeric HUD is hidden; omit per-frame DOM mutations.
+ updateTutorial();
+}
+function ensureSound(){
+ if(!soundEnabled)return null;
+ try{
+  audioCtx??=new (window.AudioContext||window.webkitAudioContext)();
+  if(!audioMaster){
+   audioMaster=audioCtx.createGain();audioMaster.gain.value=2.45;
+   audioLimiter=audioCtx.createDynamicsCompressor();
+   audioLimiter.threshold.value=-18;audioLimiter.knee.value=18;audioLimiter.ratio.value=5;
+   audioLimiter.attack.value=.004;audioLimiter.release.value=.21;
+   audioMaster.connect(audioLimiter).connect(audioCtx.destination);
+  }
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  return audioCtx;
+ }catch(e){return null}
+}
+function beep(freq,dur,type='sine',vol=.04,delay=0){const ctx=ensureSound();if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,ctx.currentTime+delay);o.frequency.exponentialRampToValueAtTime(Math.max(30,freq*.57),ctx.currentTime+delay+dur);g.gain.setValueAtTime(.0001,ctx.currentTime+delay);g.gain.exponentialRampToValueAtTime(vol,ctx.currentTime+delay+.009);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+delay+dur);o.connect(g).connect(audioMaster);o.start(ctx.currentTime+delay);o.stop(ctx.currentTime+delay+dur+.02)}
+// Layered acoustic synthesis: glass/ice partials + filtered impact noise.
+// Self-contained: no copyrighted or remote audio files required.
+const shortNoiseBuffers={};
+function noiseBuffer(ctx,duration=.22){const key=Math.round(duration*1000);if(shortNoiseBuffers[key])return shortNoiseBuffers[key];const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),arr=buffer.getChannelData(0);let x=271828;
+ for(let i=0;i<arr.length;i++){x=(Math.imul(x,1664525)+1013904223)>>>0;arr[i]=((x/4294967295)*2-1)*(.78+.22*Math.sin(i*.01));}shortNoiseBuffers[key]=buffer;return buffer;}
+function noiseHit(center,duration,volume){const ctx=ensureSound();if(!ctx)return;const src=ctx.createBufferSource();src.buffer=noiseBuffer(ctx,Math.max(.09,duration));const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=center;filter.Q.value=.8;
+ const gain=ctx.createGain(),t=ctx.currentTime;gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),t+.004);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);src.connect(filter).connect(gain).connect(audioMaster);src.start(t);src.stop(t+duration+.002);}
+function iceSound(){const ctx=ensureSound();if(!ctx)return;const now=ctx.currentTime;const root=760+Math.random()*195;
+ for(let i=0;i<5;i++){const osc=ctx.createOscillator(),gain=ctx.createGain(),t=now+i*.012;osc.type='sine';osc.frequency.setValueAtTime(root*[1,1.42,1.93,2.70,3.21][i],t);
+  const vol=[.025,.015,.011,.006,.0035][i],len=[.22,.17,.13,.09,.08][i];gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(vol,t+.003);gain.gain.exponentialRampToValueAtTime(.0001,t+len);osc.connect(gain).connect(audioMaster);osc.start(t);osc.stop(t+len+.01);
+ }noiseHit(2900,.070,.012);}
+function softClink(){if(Math.random()<.88){beep(980+Math.random()*410,.085,'sine',.010);noiseHit(3300,.048,.005);}}
+function stirNoise(){noiseHit(1100,.13,.009);if(Math.random()<.78)beep(1380+Math.random()*320,.11,'sine',.0055);}
+function finishSound(){const ctx=ensureSound();if(!ctx)return;iceSound();for(let i=0;i<4;i++){beep([392,494,587,784][i],.44,'sine',.011,i*.13);}noiseHit(4600,.25,.006);}
+let pourNoiseGain=null;
+function initPourNoise(){
+ const ctx=ensureSound();if(!ctx||pourNoiseGain)return;
+ const buffer=ctx.createBuffer(1,ctx.sampleRate*1.2,ctx.sampleRate),d=buffer.getChannelData(0);
+ for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.60;
+ const source=ctx.createBufferSource();source.buffer=buffer;source.loop=true;
+ const low=ctx.createBiquadFilter();low.type='bandpass';low.frequency.value=1100;low.Q.value=.52;
+ pourNoiseGain=ctx.createGain();pourNoiseGain.gain.value=0;
+ source.connect(low).connect(pourNoiseGain).connect(audioMaster);source.start();
+}
+function updatePourAudio(){
+ if(!pourNoiseGain||!audioCtx)return;
+ const on=soundEnabled&&s.pour&&pourStream.visible;
+ const gain=on?(s.pour==='soda'?.032:.020)*Math.max(.1,s.manual?s.pourRate:1):0;
+ pourNoiseGain.gain.setTargetAtTime(gain,audioCtx.currentTime,.06);
+}
+
+function glassPacked(){
+ if(s.ice>=ICE_VISUAL_CAP)return true;
+ // Avoid prematurely rejecting a piece while previous pieces are still falling.
+ // Once many large cubes have settled near the rim, the glass is physically full.
+ if(s.ice<ICE_IDEAL_MIN)return false;
+ let nearLip=0, stillFalling=false;
+ for(let i=0;i<s.ice;i++){
+  const c=cubes[i],u=c.userData;
+  if(!c.visible)continue;
+  if(u.age<.8)stillFalling=true;
+  if(c.position.y<2.8 && c.position.y+u.ext.y>2.49)nearLip++;
+ }
+ return !stillFalling && nearLip>=3;
+}
+function addIce(dropPosition=null){
+ const next=cubes[s.ice];
+ if(!next || glassPacked() || s.whisky+s.soda+s.iceVolume+next.userData.volume>MAX_GLASS_ML-4){
+  hint('大きな氷でグラスがいっぱいです。','氷の隙間へウイスキーや炭酸水を注げます。');return false;
+ }
+ if(s.ice===0&&s.whisky>0)s.iceBeforeWhisky=false;
+ const i=s.ice;
+ s.ice++;s.iceVolume+=next.userData.volume;
+ next.visible=true;
+ const dropAngle=iceRand()*Math.PI*2,dropRadius=Math.sqrt(iceRand())*.38;
+ if(dropPosition){next.position.set(clamp(dropPosition.x,-.39,.39),2.89+iceRand()*.11,clamp(dropPosition.z,-.35,.35));}
+ else next.position.set(Math.cos(dropAngle)*dropRadius,2.95+iceRand()*.17,Math.sin(dropAngle)*dropRadius);
+ const u=next.userData;
+ u.vel.set((iceRand()-.5)*.22,-(dropPosition?.85:.15),(iceRand()-.5)*.22);
+ u.ang.set((iceRand()-.5)*2.1,(iceRand()-.5)*2.1,(iceRand()-.5)*2.1);
+ u.fall=true;u.impact=false;u.age=0;
+ iceSound();splashTime=.58;waveEnergy=Math.max(.15,waveEnergy);refresh();
+ hint('カラン！ 大きな氷を '+s.ice+' 個入れた。',s.ice>=ICE_VISUAL_CAP?'十分な氷が入りました。次はウイスキーを注ごう。':'氷は約10〜12個が目安。トングはグラスの近くで離すだけ。');
+ return true;
+}
+// Stable, shape-aware approximation. Contact uses each ice piece's box-like extents,
+// rather than oversized spheres. Damped buoyancy prevents an entire packed stack
+// from floating up in one block when liquid is added.
+function stepIcePhysics(dt){
+ const n=s.ice;if(!n)return;
+ const waterY=s.whisky+s.soda>0.2?.285+liquidHeight:0;
+ const steps=Math.max(1,Math.ceil(dt/(1/90))),h=dt/steps;
+ for(let sub=0;sub<steps;sub++){
+  for(let i=0;i<n;i++){
+   const c=cubes[i],p=c.position,u=c.userData,e=u.ext;
+   u.age+=h;
+   const submersion=waterY>0?clamp((waterY-(p.y-e.y))/(e.y*2),0,1):0;
+   // Counteracts most (but not all) weight. Bottom pieces remain stacked.
+   const buoy=9.55*submersion+0.35*submersion*clamp((waterY-p.y)/1.4,0,1);
+   u.vel.y+=(-10.0+buoy)*h;
+   u.vel.multiplyScalar(Math.exp(-h*(submersion>.1?5.5:1.7)));
+   p.addScaledVector(u.vel,h);
+   c.rotation.x+=u.ang.x*h;c.rotation.y+=u.ang.y*h;c.rotation.z+=u.ang.z*h;
+   u.ang.multiplyScalar(Math.exp(-h*(submersion>.1?5.6:3.6)));
+   const radial=Math.hypot(p.x,p.z),maxRad=Math.max(.05,.685-Math.max(e.x,e.z));
+   if(radial>maxRad){const nx=p.x/radial,nz=p.z/radial;p.x=nx*maxRad;p.z=nz*maxRad;
+    const vn=u.vel.x*nx+u.vel.z*nz;if(vn>0){u.vel.x-=1.18*vn*nx;u.vel.z-=1.18*vn*nz;}
+   }
+   if(p.y<.285+e.y){const impact=-u.vel.y;p.y=.285+e.y;u.vel.y=Math.max(0,-u.vel.y*.07);u.vel.x*=.80;u.vel.z*=.80;
+    if(impact>1.3&&!u.impact){iceSound();u.impact=true;splashTime=Math.max(splashTime,.26);waveEnergy=Math.max(waveEnergy,.24);}
+   }
+  }
+  for(let pass=0;pass<4;pass++){
+   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const a=cubes[i],b=cubes[j],pa=a.position,pb=b.position,ua=a.userData,ub=b.userData,ea=ua.ext,eb=ub.ext;
+    const dx=pb.x-pa.x,dy=pb.y-pa.y,dz=pb.z-pa.z;
+    const ox=ea.x+eb.x-Math.abs(dx),oy=ea.y+eb.y-Math.abs(dy),oz=ea.z+eb.z-Math.abs(dz);
+    if(ox<=0||oy<=0||oz<=0)continue;
+    let axis='y',over=oy,sign=dy>=0?1:-1;
+    if(ox<over){axis='x';over=ox;sign=dx>=0?1:-1;}
+    if(oz<over){axis='z';over=oz;sign=dz>=0?1:-1;}
+    const sep=(over+.0003)*.51;
+    pa[axis]-=sign*sep;pb[axis]+=sign*sep;
+    const rel=ub.vel[axis]-ua.vel[axis];
+    if(rel*sign<0){const imp=rel*.47;ua.vel[axis]+=imp;ub.vel[axis]-=imp;}
+    if(axis==='y'){
+     // Contact friction: ice held up by the piece beneath it, not sliding through.
+     ua.vel.x*=.985;ua.vel.z*=.985;ub.vel.x*=.985;ub.vel.z*=.985;
+    }
+   }
+  }
+  for(let i=0;i<n;i++){
+   const c=cubes[i],p=c.position,u=c.userData,e=u.ext;
+   const lim=Math.max(.05,.685-Math.max(e.x,e.z));const radial=Math.hypot(p.x,p.z);
+   if(radial>lim){p.x=p.x/radial*lim;p.z=p.z/radial*lim;u.vel.x*=.6;u.vel.z*=.6;}
+   if(p.y<.285+e.y){p.y=.285+e.y;u.vel.y=Math.max(0,u.vel.y);}
+   // Once the falling piece has settled, confine its center below the glass rim.
+   // This also prevents a tall, unrealistic tower of ice above the lip.
+   if(u.age>1.0 && p.y>2.59-e.y){p.y=2.59-e.y;u.vel.y=Math.min(u.vel.y,0);}
+  }
+ }
+}
+function beginPour(manual=false){
+ if(s.selected!=='whisky'&&s.selected!=='soda'||!s.started||s.finished)return;
+ if(s.whisky+s.soda>=maxDrink()-.01){
+  hint('もう注げません。','液体がグラスの縁まで来ました。');return;
+ }
+ s.pour=s.selected;s.scorePourStarts++;s.manual=manual;s.reach=0;s.tilt=0;s.pourRate=0;movingTool=s.selected;initPourNoise();
+ if(!s.first)s.first=s.selected;
+ if(s.selected==='whisky'&&s.ice===0)s.iceBeforeWhisky=false;
+ hint(manual?'ボトルをグラスの上へ運び、さらに傾けよう。':'ボトルをグラスの上へ運んでいます…',manual?'ドラッグを続けるほど傾きが大きくなり、注ぐ勢いが変わります。':'長押ししている間、グラスの上から注ぎます。');
+}
+function stopPour(){s.pour=null;s.manual=false;s.tilt=0;s.reach=0;s.pourRate=0;pourStream.visible=false;movingTool=null;$('tiltHud').classList.remove('active');}
+function stirMotion(dx,dy){
+ if(!s.ice && s.whisky+s.soda<4){hint('先に氷か飲み物を入れよう。');return;}
+ if(Math.abs(dy)<.9&&Math.abs(dx)<.9)return;
+ const lift=clamp(-dy/210,-.075,.14);
+ s.spoonLift=clamp(s.spoonLift+lift,0,1);
+ s.spoonX=clamp(s.spoonX+dx/820,-.37,.37);
+ s.spoonZ=clamp(s.spoonZ+dx/2400,-.18,.18);
+ const headY=.42+s.spoonLift*.62;
+ let collisions=0;
+ // Displace ice within the immersed spoon's working range, then allow collisions
+ // to carry that movement through the rest of the stack.
+ for(let i=0;i<s.ice;i++){
+  const c=cubes[i],u=c.userData,p=c.position;
+  const horizontal=Math.hypot(p.x-s.spoonX,p.z-s.spoonZ);
+  const closeness=horizontal<.33 ? 1-horizontal/.33 : 0;
+  if(closeness>0 && p.y>headY-.25 && p.y<headY+1.25){
+   const vertical=Math.max(0,1-Math.abs(p.y-(headY+.35))/1.15),influence=closeness*vertical;
+   u.vel.y+=Math.max(0,-dy)*.012*influence;
+   u.vel.x+=dx*.0025*influence;
+   u.vel.z+=(p.z-s.spoonZ)*.013*influence;
+   u.ang.y+=dx*.006*influence;
+   collisions++; 
+  }
+ }
+ s.stir+=Math.abs(dy)/250;s.mix=Math.min(1,s.mix+Math.hypot(dx,dy)/2400);
+ waveX=s.spoonX;waveZ=s.spoonZ;waveEnergy=Math.min(.95,waveEnergy+Math.hypot(dx,dy)*.0052);
+ stirTime=s.clock;
+ s.foam=Math.min(1,s.foam+Math.hypot(dx,dy)*.0012);
+ s.fizz=Math.max(.15,s.fizz-Math.hypot(dx,dy)*.001);
+ s.co2Loss=Math.min(1,s.co2Loss+Math.hypot(dx,dy)*.00007);updateTutorial();
+ if(s.clock-s.stirSoundAt>.13){stirNoise();if(collisions>0)softClink();s.stirSoundAt=s.clock;}
+ if(s.soda>0&&s.stir>2.6)hint('混ぜすぎに注意。','炭酸を逃さないように、下から上へ1回だけ。');
+ else hint('氷を持ち上げて、そっと戻そう。','液面と周りの氷が動きます。');
+}
+// Robust pointer controls: glass takes priority over tools BEHIND the glass.
+const hitGlass=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,3.05,32),new THREE.MeshBasicMaterial({visible:false}));
+hitGlass.position.y=1.45;scene.add(hitGlass);
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function rayFromEvent(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera)}
+function selectAt(e){
+ rayFromEvent(e);
+ const glassHit=raycaster.intersectObject(hitGlass,false)[0];
+ const toolHits=raycaster.intersectObjects(selectable,false);
+ const first=toolHits.find(h=>!glassHit || h.distance<glassHit.distance-.025);
+ if(first){let obj=first.object;while(obj&&!obj.userData.tool)obj=obj.parent;return {tool:obj?.userData.tool??null,onGlass:false}}
+ return {tool:null,onGlass:Boolean(glassHit)};
+}
+function beginStir(e){
+ s.spoonActive=true;s.spoonLift=.06;
+ s.spoonX=.27;s.spoonZ=.05;s.spoonPreviewUntil=s.clock+1.45;
+ softClink();
+ if(s.ice===0 && s.whisky+s.soda<4)hint('まず氷か飲み物を入れよう。');
+ else hint('底の氷を一度すくい上げよう。','グラスの中を下から上へドラッグ。');
+}
+// Player-controlled pouring: grab a bottle, drag toward the glass, and continue dragging to tilt.
+// Screen-space targeting is stable on both desktop and mobile, independent of camera fov.
+function projected(v){const point=v.clone().project(camera),r=renderer.domElement.getBoundingClientRect();return {x:(point.x+1)*.5*r.width+r.left,y:(1-point.y)*.5*r.height+r.top}}
+function bottleReachDelta(kind){
+ const b=bottleTypes[kind],rest=bottleRests[kind];
+ const start=projected(rest.clone().add(new THREE.Vector3(0,1.28,0)));
+ const target=projected(b.spout);
+ return {x:target.x-start.x,y:target.y-start.y};
+}
+function bottleManualMotion(e){
+ const drag=s.drag,vec=bottleReachDelta(drag.tool);
+ const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
+ const len=Math.max(900,vec.x*vec.x+vec.y*vec.y);
+ const t=(dx*vec.x+dy*vec.y)/len;
+ s.reach=clamp(t/.78,0,1);
+ s.tilt=clamp((t-.62)/.65,0,1);
+ $('tiltHud').classList.add('active');
+ $('tiltHud').querySelector('i').style.width=Math.round(s.tilt*100)+'%';
+ $('tiltHud').querySelector('span').textContent=s.tilt<.42?'グラスの横から上へ運ぶ':s.tilt<.82?'ボトルを傾けて注ぎ口を合わせる':'傾きに合わせて注いでいます';
+ s.pourRate=s.tilt<.82?0:clamp((s.tilt-.82)/.18,0,1);
+}
+// Screen-space-to-world drag on a vertical plane beside the glass.
+// Keeping the object at a fixed depth prevents it passing through the glass.
+const tongPlane=new THREE.Plane(new THREE.Vector3(0,0,1),-.25),tongPoint=new THREE.Vector3();
+let tongReturn=1;
+function screenToTongPlane(e){rayFromEvent(e);return raycaster.ray.intersectPlane(tongPlane,tongPoint.clone());}
+function beginTongs(e){
+ if(s.finished||!s.started)return;
+ if(glassPacked()||s.ice>=ICE_VISUAL_CAP){hint('グラスは氷でいっぱいです。','ウイスキーや炭酸水を注ぎましょう。');return;}
+ e.preventDefault();try{renderer.domElement.setPointerCapture(e.pointerId)}catch(err){}
+ const point=screenToTongPlane(e);if(!point)return;
+ selectTool('ice');s.tongsActive=true;s.tongsReady=false;heldRock.visible=true;tongReturn=0;
+ s.drag={kind:'tongs',tool:'ice',id:e.pointerId,from:'scene',startX:e.clientX,startY:e.clientY,x:e.clientX,y:e.clientY,
+  startWorld:point.clone(),startPosition:tongs.position.clone()};
+ beep(530,.075,'triangle',.009);
+ hint('大きな氷をつかみました！','グラスの近くまで運んで離すと、自動で中へ落ちます。');
+}
+function moveTongs(e){
+ const p=screenToTongPlane(e);if(!p||!s.drag)return;
+ const delta=p.clone().sub(s.drag.startWorld);
+ tongs.position.copy(s.drag.startPosition).add(delta);
+ tongs.position.set(clamp(tongs.position.x,-3.15,1.15),clamp(tongs.position.y,.82,3.7),.25);
+ tongs.rotation.z=THREE.MathUtils.lerp(tongRestAngle,-.10,clamp((tongs.position.y-.8)/2.0,0,1));
+ const tip=tongs.localToWorld(new THREE.Vector3(0,-.55,0));
+ // Aim assist: a much more generous release region surrounding the glass.
+ // Any release in this zone automatically snaps the ice above the open mouth.
+ const valid=Math.abs(tip.x)<1.24&&Math.abs(tip.z)<1.05&&tip.y>1.52&&tip.y<3.80;
+ s.tongsReady=valid;
+ $('iceDropHint').classList.toggle('active',valid);
+}
+function releaseTongs(){
+ if(!s.tongsActive)return;
+ if(s.tongsReady){
+  const at=tongs.localToWorld(new THREE.Vector3(0,-.55,0));
+  // Assisted drop always starts INSIDE the opening, even if released slightly to its side.
+  addIce({x:clamp(at.x*.48,-.35,.35),z:clamp(at.z*.45,-.30,.30)});
+ }
+ else if(s.started&&!s.finished)hint('氷をアイスペールへ戻しました。','グラスの近くで離してください。タップならすぐに氷を追加できます。');
+ s.tongsActive=false;s.tongsReady=false;tongReturn=0;
+ heldRock.visible=false;$('iceDropHint').classList.remove('active');
+}
+function onDown(e){
+ if(!s.started||s.finished)return;
+ const hit=selectAt(e);
+ if(hit.tool){
+  if(hit.tool==='tongs'){beginTongs(e);return;}
+  selectTool(hit.tool);
+  if(hit.tool==='ice'){addIce();return;}
+  if(hit.tool==='stir'){
+   e.preventDefault();try{renderer.domElement.setPointerCapture(e.pointerId)}catch(err){}
+   s.drag={kind:'spoon',tool:'stir',x:e.clientX,y:e.clientY,id:e.pointerId,from:'scene'};
+   beginStir(e);hint('マドラーを取り出しました。','そのまま上へドラッグして氷をそっと持ち上げよう。');return;
+  }
+  if(hit.tool==='whisky'||hit.tool==='soda'){
+   e.preventDefault();try{renderer.domElement.setPointerCapture(e.pointerId)}catch(err){}
+   s.drag={kind:'bottle',tool:hit.tool,startX:e.clientX,startY:e.clientY,x:e.clientX,y:e.clientY,id:e.pointerId,from:'scene'};
+   beginPour(true);$('tiltHud').classList.add('active');
+   return;
+  }
+ }
+ if(!hit.onGlass){
+   if(s.selected==='stir'){
+     const p=projected(new THREE.Vector3(0,1.55,0));
+     if(Math.abs(e.clientX-p.x)<Math.min(90,renderer.domElement.clientWidth*.12)&&Math.abs(e.clientY-p.y)<125){
+       e.preventDefault();try{renderer.domElement.setPointerCapture(e.pointerId)}catch(err){}
+       s.drag={kind:'spoon',tool:'stir',x:e.clientX,y:e.clientY,id:e.pointerId,from:'scene'};beginStir(e);return;
+     }
+   }
+   hint('道具をタップして操作しよう。','氷はトングをグラス近くで離すか、アイスペールをタップ。');return
+ }
+ e.preventDefault();try{renderer.domElement.setPointerCapture(e.pointerId)}catch(err){}
+ s.drag={kind:'glass',x:e.clientX,y:e.clientY,id:e.pointerId,from:'scene'};
+ if(s.selected==='ice')addIce();
+ else if(s.selected==='stir')beginStir(e);
+ else beginPour(false);
+}
+function onMove(e){
+ if(!s.drag||s.drag.from!=='scene'||s.drag.id!==e.pointerId||s.finished)return;
+ e.preventDefault();
+ if(s.drag.kind==='tongs'){moveTongs(e)}
+ else if(s.drag.kind==='bottle'){bottleManualMotion(e)}
+ else if(s.selected==='stir'){const dx=e.clientX-s.drag.x,dy=e.clientY-s.drag.y;stirMotion(dx,dy)}
+ s.drag.x=e.clientX;s.drag.y=e.clientY;
+}
+function endInteraction(e){
+ if(s.drag&&s.drag.id===e.pointerId){if(s.drag.kind==='tongs')releaseTongs();if(s.drag.kind==='spoon'||(s.drag.kind==='glass'&&s.selected==='stir'))s.spoonPreviewUntil=s.clock+.95;s.drag=null;s.spoonActive=false;stopPour()}
+}
+renderer.domElement.addEventListener('pointerdown',onDown);
+renderer.domElement.addEventListener('pointermove',onMove);
+renderer.domElement.addEventListener('pointerup',endInteraction);
+renderer.domElement.addEventListener('pointercancel',endInteraction);
+renderer.domElement.addEventListener('lostpointercapture',endInteraction);
+window.addEventListener('pointerup',endInteraction);
+window.addEventListener('pointercancel',endInteraction);
+window.addEventListener('blur',()=>{releaseTongs();s.drag=null;s.spoonActive=false;stopPour()});
+// A quick tap selects the ingredient. Holding its button also pours directly.
+let toolHoldTimer=null,toolHoldId=null;
+function endToolHold(e){
+ if(toolHoldId!==null&&(e==null||e.pointerId===toolHoldId)){
+  clearTimeout(toolHoldTimer);toolHoldTimer=null;toolHoldId=null;
+  if(s.drag?.from==='tool')s.drag=null;
+  stopPour();
+ }
+}
+for(const b of document.querySelectorAll('[data-tool]')){
+ const id=b.dataset.tool;
+ b.addEventListener('pointerdown',e=>{
+  if(!s.started||s.finished)return;
+  endToolHold();selectTool(id);
+  if(id==='whisky'||id==='soda'){
+   e.preventDefault();toolHoldId=e.pointerId;
+   toolHoldTimer=setTimeout(()=>{
+    if(toolHoldId===e.pointerId&&s.started&&!s.finished){
+     s.drag={x:e.clientX,y:e.clientY,id:e.pointerId,from:'tool'};beginPour();
+    }
+   },180);
+  }
+ });
+ b.addEventListener('pointerup',endToolHold);
+ b.addEventListener('pointercancel',endToolHold);
+ b.addEventListener('lostpointercapture',endToolHold);
+ b.addEventListener('click',()=>{if(s.selected!==id)selectTool(id)});
+}
+window.addEventListener('pointerup',endToolHold);
+window.addEventListener('pointercancel',endToolHold);
+$('soundBtn').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('soundBtn').textContent=soundEnabled?'♪ ON':'♪ OFF';if(soundEnabled)beep(640,.12,'triangle',.025)});
+function reset(){endToolHold();releaseTongs();s.tongsActive=false;s.tongsReady=false;heldRock.visible=false;tongs.position.copy(tongRest);tongs.rotation.z=tongRestAngle;s.fizz=0;s.foam=0;s.cinematic=0;s.cinematicShown=false;camera.position.copy(baseCameraPosition);camera.lookAt(baseLookAt);s.ice=0;s.iceVolume=0;s.whisky=0;s.soda=0;s.stir=0;s.overflow=0;s.first=null;s.mix=0;s.iceBeforeWhisky=true;s.finished=false;s.drag=null;s.spoonActive=false;s.spoonLift=0;s.spoonX=.27;s.spoonZ=.06;s.stirSoundAt=0;s.spoonPreviewUntil=0;s.co2Loss=0;s.scorePourMl=0;s.scoreGentleSodaMl=0;s.scorePourStarts=0;s.nextFizzSound=0;s.playStartedAt=s.clock;s.firstPoured=null;s.sodaHasPoured=false;s.whiskyHasPoured=false;s.whiskyAfterSoda=false;s.scoreManualSodaMl=0;s.scoreSlowSodaMl=0;s.scoreFastSodaMl=0;s.manual=false;s.reach=0;s.tilt=0;s.pourRate=0;s.lastSodaTime=-100;whiskyParkShift=0;barTime=0;waveEnergy=0;waveX=0;waveZ=0;stopPour();splashTime=0;shake=0;cubes.forEach(c=>{c.visible=false;c.userData.fall=false;c.userData.impact=false;c.userData.vel.set(0,0,0);c.userData.ang.set(0,0,0);c.userData.age=0;c.position.copy(c.userData.base);c.rotation.copy(c.userData.rot)});refresh();selectTool('ice');$('result').classList.add('hidden');$('finishGlow').classList.remove('active');$('finaleWords').classList.remove('active');$('finishBtn').textContent='完成する →';$('message').classList.remove('visible')}
+$('startBtn').addEventListener('click',()=>{ensureSound();s.started=true;s.playStartedAt=s.clock;$('intro').classList.add('hidden');selectTool('ice');beep(510,.15,'sine',.024)});
+function scoreHighball(){
+ const total=s.whisky+s.soda,ratio=s.whisky/Math.max(1,total);
+ const closeness=(value,target,range)=>clamp(1-Math.abs(value-target)/range,0,1);
+ const composition=Math.round(clamp(19*closeness(ratio,.25,.19)+11*closeness(total,240,190),0,30)*clamp(total/140,0,1));
+ const ice=s.ice===0?0:(s.iceBeforeWhisky&&(s.ice===10||s.ice===11)?20:Math.round(clamp(15*closeness(s.ice,10.5,10.5)+5*(s.iceBeforeWhisky?1:0),0,20)));
+ const gentle=s.soda>0?s.scoreGentleSodaMl/s.soda:0;
+ const pouring=Math.round(clamp((s.whisky>10&&s.soda>10?8:total>10?3:0)+8*clamp(1-s.overflow/18,0,1)+4*gentle,0,20)*clamp(total/130,0,1));
+ const stirring=s.stir<.14?0:Math.round(clamp(15*closeness(s.stir,1.0,2.4),0,15));
+ const carbonation=s.soda<10?0:Math.round(clamp(8*clamp(s.soda/165,0,1)+7*clamp(1-s.co2Loss-(Math.max(0,s.stir-1.6)*.12),0,1),0,15)*clamp(s.soda/90,0,1));
+ const items=[{name:'配合バランス',value:composition,max:30,tip:'ウイスキーと炭酸水を1：3、合計240ml前後にしてみよう。'},
+  {name:'氷の量と順序',value:ice,max:20,tip:'氷を先に10〜12個程度入れてから注ごう。'},
+  {name:'注ぎ方',value:pouring,max:20,tip:'注ぎすぎを防ぎ、炭酸を静かに注ぐのがコツ。'},
+  {name:'混ぜ方',value:stirring,max:15,tip:'マドラーで氷を軽く持ち上げ、混ぜすぎないように。'},
+  {name:'炭酸の保持',value:carbonation,max:15,tip:'炭酸水は静かに、最後のひと混ぜもやさしく。'}];
+ const sum=items.reduce((a,b)=>a+b.value,0);
+ const grade=sum>=90?'S — BAR MASTER':sum>=78?'A — EXCELLENT':sum>=65?'B — GOOD':sum>=45?'C — KEEP TRYING':'D — PRACTICE';
+ const weakest=[...items].sort((a,b)=>a.value/a.max-b.value/b.max)[0];
+ return {sum,grade,items,tip:weakest.tip};
+}
+// Thirty-three outcomes. Only the title and one short comment are ever displayed;
+// the five-part score is used privately to decide which outcome applies.
+function outcome(){
+ const total=s.whisky+s.soda;
+ const ratio=total>0?s.whisky/total:0;
+ const scored=scoreHighball();
+ const score=scored.sum;
+ const elapsed=Math.max(0,s.clock-s.playStartedAt);
+ const fill=maxDrink()>0?total/maxDrink():0;
+ const gentle=s.soda>0?s.scoreGentleSodaMl/s.soda:0;
+ const manuallyPouredSoda=s.scoreManualSodaMl;
+ const manualSoft=manuallyPouredSoda>0?s.scoreSlowSodaMl/manuallyPouredSoda:0;
+ const manualHard=manuallyPouredSoda>0?s.scoreFastSodaMl/manuallyPouredSoda:0;
+ const mixRight=ratio>=.19&&ratio<=.30&&total>=155&&total<=310&&s.whisky>=35&&s.whisky<=80;
+ const fullIce=s.ice>=9&&s.ice<=ICE_VISUAL_CAP&&s.iceBeforeWhisky;
+ const stirRight=s.stir>=.15&&s.stir<=3.7;
+ const clean=s.overflow<=.02;
+ const label=(name,description)=>({name,description});
+
+ // Impossible or exceptional recipes: give these priority over normal high scores.
+ if(s.ice===12&&total<50)return label('氷河期到来','ハイボールを注文したはずが、南極観測隊に配属されました。');
+ if(s.overflow>8&&ratio>.50&&s.stir>3.7)return label('バーテンダー出禁','お客様、申し訳ありません。当店のグラスには荷が重すぎます。');
+ if(total<50)return label('準備運動で終了！','乾杯するにはまだ早い。グラスが出番を待っている。');
+ if(s.overflow>8)return label('大洪水ハイボール','グラスの限界を超えた、情熱あふれる一杯。');
+ if(s.ice===0)return label('氷、欠席です。','本日の氷、まさかの全員欠席。');
+ if(s.whisky<15)return label('炭酸水のソロライブ','本日の主役は炭酸水。ウイスキーは特別出演。');
+ // Requested rename: soda strictly below 60 mL, exact title and comment.
+ if(s.soda<60)return label('お酒マン','主役はウイスキー。炭酸水はまだ楽屋にいるらしい…');
+ if(ratio>.50)return label('原液に近い覚悟','これはハイボールか、それとも挑戦状か。');
+ if(ratio>.41)return label('濃いめの決意','ウイスキーへの愛が、グラスからあふれている。');
+ if(ratio<.12)return label('香りを探す旅','ウイスキーの気配を探して、グラスの中を大捜索。');
+ if(ratio<.17)return label('風のようなハイボール','軽やかすぎて、ウイスキーがかくれんぼ。');
+ if(s.stir>3.7)return label('マドラー大暴走','混ぜて、混ぜて、混ぜまくる。もはや小さな台風。');
+ if(s.co2Loss>.45&&s.soda>=80)return label('泡の逃避行','シュワシュワたちは自由を求めて旅立った。');
+ if(s.whiskyAfterSoda)return label('追いウイスキーの誘惑','完成したと思った？ ここからが本番です。');
+ if(s.firstPoured==='soda'&&s.whisky>=15)return label('炭酸、先走る。','主役より先に登場する炭酸水。登場順、間違えてません？');
+ if(!s.iceBeforeWhisky&&s.ice>0)return label('順番が逆の冒険','順番なんて気にしない。それが俺の流儀。');
+ if(manuallyPouredSoda>=30&&manualHard>.52&&s.soda>=90)return label('炭酸ジェット発射','勢いだけならロケット級。炭酸もびっくり。');
+ if(s.ice<=4)return label('氷、早退中','氷が少数精鋭。冷やす仕事が大忙し。');
+ if(s.ice<=8)return label('氷のシフト短め','もう少し仲間がいれば、冷たさも一人前。');
+ if(total<155)return label('ちょっとだけよハイボール','お試しサイズにもほどがある。乾杯したらなくなりそう。');
+ if(s.stir<.15)return label('マドラー休暇中','マドラーは本日有給休暇を取得しました。');
+
+ // Hidden expert and skill awards. All check actual captured gameplay statistics.
+ if(score===100&&mixRight&&fullIce&&stirRight&&clean&&s.co2Loss<.07)
+  return label('幻の一杯','伝説は本当だった。この一杯を作ったあなたに、もう教えることはない。');
+ if(s.whisky>=58&&s.whisky<=62&&s.soda>=174&&s.soda<=186&&clean&&s.stir<=3.7&&s.stir>=.15)
+  return label('計量器いらずの天才','その右手、もしかして計量器が内蔵されてます？');
+ if(fill>=.95&&clean&&score>=60)
+  return label('満杯寸前のチキンレース','あと一滴で大惨事。その度胸、嫌いじゃない。');
+ if(elapsed<=60&&score>=85&&mixRight)
+  return label('爆速バーテンダー','注文から完成まで一瞬。店長もタイムカードを二度見。');
+ if(manuallyPouredSoda>=50&&manualSoft>=.70&&gentle>=.90&&s.co2Loss<.10&&score>=78)
+  return label('注ぎの忍者','静かすぎる注ぎ技。炭酸ですら気づかなかった。');
+ if(s.stir>=.15&&s.stir<=.65&&mixRight&&score>=65)
+  return label('マドラーの一閃','たった一振りで決める。無駄な動きは一切なし。');
+ if(score>=95&&mixRight&&fullIce&&stirRight)
+  return label('伝説のハイボール職人','この一杯、もはや芸術。バーテンダーも思わず二度見。');
+ if(score>=88&&mixRight&&fullIce&&stirRight)
+  return label('BAR MASTER のハイボール','黄金比を知り尽くした、まさに至高の一杯。');
+ if(score>=80&&gentle>=.87&&s.co2Loss<.10)
+  return label('炭酸の守護神','このシュワシュワ、最後の一滴まで守り抜いた。');
+ if(score>=75&&s.ice>=11)
+  return label('氷の城主','氷の城に琥珀色の宝石。見た目からして優勝。');
+ if(score>=75&&ratio>=.21&&ratio<=.29)
+  return label('黄金バランス賞','濃すぎず、薄すぎず。絶妙なバランスに拍手。');
+ return label('自分流ハイボール','レシピに正解はない。これがあなたの黄金比。');
+}
+function finish(){
+ if(!s.started||s.finished)return;
+ stopPour();releaseTongs();s.finished=true;s.cinematic=0;s.cinematicShown=false;
+ const o=outcome();
+ const label=document.createElement('strong');label.textContent=o.name;
+ const commentary=document.createElement('span');commentary.className='comment';commentary.textContent=o.description;
+ $('resultText').replaceChildren(label,commentary);
+ $('message').classList.remove('visible');clearTimeout(hintTimer);
+ $('finishBtn').textContent='↻ もう一杯';
+ finishSound();$('finishGlow').classList.add('active');$('finaleWords').classList.remove('active');void $('finaleWords').offsetWidth;$('finaleWords').classList.add('active');
+}
+$('finishBtn').addEventListener('click',()=>{endToolHold();if(s.finished){reset();return;}finish()});
+let baseCameraPosition=new THREE.Vector3(),baseLookAt=new THREE.Vector3();
+function fit(){
+ const el=$('scene'),w=el.clientWidth,h=el.clientHeight;
+ camera.aspect=w/Math.max(1,h);
+ const mobile=w<700;
+ camera.fov=mobile?46:37;
+ camera.position.set(mobile?1.85:1.75,mobile?4.55:3.85,mobile?22.8:9.55);
+ baseLookAt.set(mobile?.30:.25,mobile?1.37:1.33,-.06);baseCameraPosition.copy(camera.position);
+ if(!s.finished)camera.lookAt(baseLookAt);
+ camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,w<700?1.25:1.5));renderer.setSize(w,h);
+}
+window.addEventListener('resize',fit);fit();
+// Ver.9.2: camera-safe bottle paths. Start tilting WHILE moving across the
+// side lane, instead of first lifting a fully upright bottle above the top edge.
+// Retraction exactly reverses the path: clear the glass before straightening.
+// This fixes bottles disappearing outside the top of the recorded viewport.
+const bottleRests={whisky:whiskyBottle.position.clone(),soda:sodaBottle.position.clone()};
+const bottleStates={whisky:0,soda:0};
+let whiskyParkShift=0;
+const bottleTypes={
+ // The lower, shorter transfer lane is entirely to the right of the glass.
+ whisky:{mesh:whiskyBottle,neck:new THREE.Vector3(0,2.555,0),angle:1.16,spout:new THREE.Vector3(.62,3.34,-.37),lift:.45,laneX:.63,laneY:.20,laneZ:-.55},
+ soda:{mesh:sodaBottle,neck:new THREE.Vector3(0,2.39,0),angle:1.12,spout:new THREE.Vector3(.60,3.34,-.32),lift:.45,laneX:.70,laneY:.18,laneZ:-.53}
+};
+const posScratch=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);const clock=new THREE.Clock();let fxAccumulator=0, idleAccumulator=0;
+const blend=(a,b,t)=>a+(b-a)*t;
+const ease01=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+const tipAxis=new THREE.Vector3(0,0,1);
+function bottlePose(kind,progress){
+ const data=bottleTypes[kind],rest=bottleRests[kind];
+ // Preserve the actual pouring tip over the rim at progress=1. The bottle body
+ // always stays to the right of the glass, so the liquid falls almost vertically.
+ const finalRot=new THREE.Quaternion().setFromAxisAngle(tipAxis,data.angle);
+ const pourBase=data.spout.clone().sub(data.neck.clone().applyQuaternion(finalRot));
+ const lifted=rest.clone().add(new THREE.Vector3(0,data.lift,-.27));
+ const side=pourBase.clone().add(new THREE.Vector3(data.laneX,data.laneY,data.laneZ));
+ let position;
+ if(progress<=.25){position=rest.clone().lerp(lifted,ease01(progress/.25));}
+ else if(progress<=.73){position=lifted.clone().lerp(side,ease01((progress-.25)/.48));}
+ else{position=side.clone().lerp(pourBase,ease01((progress-.73)/.27));}
+ // Previously the tall upright bottle reached y>5 before being tilted.
+ // Tilt starts already near the resting position; at the side lane the bottle
+ // is almost horizontal and its highest part remains in the camera frame.
+ // The same function is used on return, preventing the glass-overlap regression.
+ const tilt=ease01((progress-.06)/.65);
+ return {position,tilt};
+}
+function animate(){const dt=Math.min(.055,clock.getDelta());
+ // Behind the introduction, 3D motion is static. Save GPU time until PLAY.
+ if(!s.started){idleAccumulator+=dt;if(idleAccumulator<1/16)return;idleAccumulator=0;}
+ s.clock+=dt;barTime+=dt;
+ fxAccumulator+=dt;
+ const updateFX=fxAccumulator>=1/30;
+ if(updateFX)fxAccumulator=fxAccumulator%(1/30);
+ whiskyParkShift+=(Number(s.pour==='soda')-whiskyParkShift)*Math.min(1,dt*3.4);
+ for(const kind of ['whisky','soda']){
+  const data=bottleTypes[kind],mesh=data.mesh,active=s.pour===kind;
+  // Manual mode waits at the side until the user has actually tilted the bottle.
+  // This prevents an upright bottle from hovering over the glass while aiming.
+  const requested=active?(s.manual?Math.min(s.reach,.73+.27*ease01((s.tilt-.42)/.48)):1):0;
+  bottleStates[kind]+=(requested-bottleStates[kind])*Math.min(1,dt*(active?5.4:3.6));
+  const progress=clamp(bottleStates[kind],0,1);
+  const pose=bottlePose(kind,progress);
+  mesh.position.copy(pose.position);
+  mesh.rotation.z=data.angle*pose.tilt;
+  // Keep the parked whisky in the back right while the soda bottle travels.
+  // Do not move a whisky bottle that is still retreating from the glass.
+  if(kind==='whisky'&&progress<.015){
+   mesh.position.z-=1.35*whiskyParkShift;
+   mesh.position.x+=1.04*whiskyParkShift;
+  }
+ }
+ pourStream.visible=false;
+ if(s.pour){
+  const t=s.pour;
+  const ready=s.manual?(s.pourRate>.02&&bottleStates[t]>.985):(bottleStates[t]>.985);
+  if(ready){
+   const rate=t==='whisky'?37:62;
+   const scaleRate=s.manual?s.pourRate:1;
+   const available=Math.max(0,maxDrink()-s.whisky-s.soda),add=Math.min(available,rate*scaleRate*dt);
+   if(add>0){
+    if(s.firstPoured===null)s.firstPoured=t;
+    if(t==='whisky'){if(s.sodaHasPoured)s.whiskyAfterSoda=true;s.whiskyHasPoured=true;}
+    if(t==='soda'){
+     s.sodaHasPoured=true;
+     if(s.manual){
+      s.scoreManualSodaMl+=add;
+      if(scaleRate<=.66)s.scoreSlowSodaMl+=add;
+      if(scaleRate>=.90)s.scoreFastSodaMl+=add;
+     }
+    }
+   }
+   s[t]+=add;s.scorePourMl+=add;
+   if(t==='soda'&&add>0){s.lastSodaTime=s.clock;
+      const strength=scaleRate;
+      s.scoreGentleSodaMl+=add*clamp(1-(Math.max(0,strength-.66)*.85),.28,1);
+      s.co2Loss=Math.min(1,s.co2Loss+add*.00048*Math.max(0,strength-.68));
+   }
+   if(add<=0 || add<rate*scaleRate*dt-.001){s.overflow+=(rate*scaleRate*dt-add);hint('グラスがいっぱい！','氷の隙間まで注げました。');stopPour();}
+   if(add>0){refresh();splashTime=.30;if(t==='soda'){s.fizz=Math.min(1.8,s.fizz+dt*2.0*scaleRate);s.foam=Math.min(1.3,s.foam+dt*.85*scaleRate);}if(Math.random()<.024)softClink();}
+   if(s.pour){
+    const data=bottleTypes[t];data.mesh.updateWorldMatrix(true,false);
+    const source=data.mesh.localToWorld(data.neck.clone());
+    const target=new THREE.Vector3(.38,Math.min(2.55,Math.max(.44,.31+liquidHeight)),-.21);
+    if(source.y>target.y+.10&&Math.hypot(source.x-target.x,source.z-target.z)<.95){
+     drawPourFlow(source,target,t,scaleRate,s.clock);
+     waveEnergy=Math.max(waveEnergy,.09+scaleRate*.13);
+     waveX=target.x;waveZ=target.z;
+    }
+   }
+  }
+ }
+ stepIcePhysics(dt);
+ // Tongs return to the ice bucket gradually after release.
+ if(!s.tongsActive){
+  tongs.position.lerp(tongRest,Math.min(1,dt*5.8));
+  tongs.rotation.z+=(tongRestAngle-tongs.rotation.z)*Math.min(1,dt*6);
+ }
+ s.fizz*=Math.exp(-dt*.12);s.foam*=Math.exp(-dt*.85);
+ // Small irregular soda pops, instead of one repeating electronic beep.
+ if(s.started&&soundEnabled&&s.soda>0&&s.fizz>.17&&s.clock>s.nextFizzSound){
+   const strength=clamp(s.fizz/1.5,.15,1);
+   noiseHit(3700+Math.random()*1400,.035+Math.random()*.04,.0008+.0018*strength);
+   if(Math.random()<.26)beep(1050+Math.random()*950,.045,'sine',.0015*strength);
+   s.nextFizzSound=s.clock+.15+Math.random()*.28;
+ }
+ const h=liquidHeight;if(bubbles.visible&&h>.1&&updateFX){bubbles.count=s.soda>0?Math.min(BUBBLE_COUNT,renderer.domElement.clientWidth<700?150:205):0;const lively=.18+.82*Math.exp(-Math.max(0,s.clock-s.lastSodaTime)/35);const harsh=clamp((1-s.stir*.10)*lively+s.fizz*.40,.13,1.45);const elapsed=s.clock;for(let i=0;i<bubbles.count;i++){let d=bubbleData[i];let progress=(elapsed*d.s*.42+d.shift)%1;let y=.29+progress*h;const r=d.r*(.88+Math.sin(elapsed+i)*.02);bD.position.set(Math.cos(d.a+elapsed*.12)*r,y,Math.sin(d.a+elapsed*.12)*r);let size=d.size*harsh*(.65+progress*.9);bD.scale.set(size,size,size);bD.updateMatrix();bubbles.setMatrixAt(i,bD.matrix)} bubbles.instanceMatrix.needsUpdate=true;}
+ // Only tiny scattered circles, not an opaque foam cap hiding the drink.
+ const foaming=drink.visible&&s.soda>0&&s.foam>.045;
+ foamMesh.visible=foaming;
+ if(foaming&&updateFX){
+  foamMesh.material.opacity=Math.min(.32,s.foam*.21);
+  for(let i=0;i<FOAM_COUNT;i++){
+   const b=foamData[i],a=b.theta+Math.sin(s.clock*1.7+b.offset)*.05;
+   foamDummy.position.set(Math.cos(a)*b.r*surface.scale.x,.289+h+.013+Math.sin(s.clock*7+b.offset)*.007,Math.sin(a)*b.r*surface.scale.x);
+   const radius=b.size*(.55+Math.min(1.5,s.foam));foamDummy.scale.set(radius,.003,radius);foamDummy.updateMatrix();foamMesh.setMatrixAt(i,foamDummy.matrix);
+  }
+  foamMesh.instanceMatrix.needsUpdate=true;
+ }
+ edgeBubbles.visible=bubbles.visible&&s.ice>0;
+ if(edgeBubbles.visible&&updateFX){
+  edgeBubbles.count=renderer.domElement.clientWidth<700?48:64;
+  for(let i=0;i<edgeBubbles.count;i++){
+   const cube=cubes[i%s.ice],u=cube.userData;
+   const a=i*2.399963+Math.sin(s.clock*.25+i)*.14,rad=u.ext.x*.80;
+   edgeBubbleDummy.position.set(cube.position.x+Math.cos(a)*rad,cube.position.y+(Math.sin(a*.9)+.15)*u.ext.y*.8,cube.position.z+Math.sin(a)*rad);
+   const tiny=(.004+(i%5)*.0017)*Math.min(1.2,.25+s.fizz*.4);
+   edgeBubbleDummy.scale.set(tiny,tiny,tiny);edgeBubbleDummy.updateMatrix();edgeBubbles.setMatrixAt(i,edgeBubbleDummy.matrix);
+  }
+  edgeBubbles.instanceMatrix.needsUpdate=true;
+ }
+ waveEnergy*=Math.exp(-dt*(s.spoonActive?2.5:4.1));
+ if(drink.visible&&updateFX){
+   const attr=surface.geometry.attributes.position;
+   // Wave mesh moves at up to 30 FPS; physics, camera and interaction remain full-rate.
+   const ripple=.006+Math.min(.048,waveEnergy*.074)+Math.min(.022,splashTime*.038);
+   for(let i=0;i<attr.count;i++){
+    const x=surfaceBase[i*3],y=surfaceBase[i*3+1];
+    const dist=Math.hypot(x-waveX,y-waveZ),envelope=Math.exp(-dist*1.20);
+    attr.array[i*3+2]=Math.sin(dist*16-s.clock*14)*ripple*envelope+Math.sin(x*9+y*7+s.clock*4)*.0034;
+   }
+   attr.needsUpdate=true;
+   surface.position.y=.285+h;meniscus.position.y=.292+h+Math.sin(s.clock*4.3)*Math.min(.013,waveEnergy*.022);
+ }
+ splash.visible=splashTime>0;if(splashTime>0){splashTime-=dt;for(let i=0;i<splashParts.length;i++){const p=splashParts[i],ang=i*Math.PI*2/splashParts.length;let travel=(1-clamp(splashTime/.8,0,1));p.position.set(Math.cos(ang)*(.14+travel*.25),.35+liquidHeight+Math.sin(travel*Math.PI)*.19,Math.sin(ang)*(.14+travel*.24));p.scale.setScalar(Math.max(.001,1-travel*.8))}}
+
+ // Ice-bucket bar spoon comes out while stirring and returns to the bucket afterwards.
+ if(s.spoonActive||s.clock<s.spoonPreviewUntil){
+  const liftTarget=new THREE.Vector3(s.spoonX,.42+Math.min(1,s.spoonLift)*.62,s.spoonZ);
+  spoonTool.position.lerp(liftTarget,Math.min(1,dt*12));
+  spoonTool.rotation.z+=(.10+Math.sin(s.clock*4)*.014-spoonTool.rotation.z)*Math.min(1,dt*12);
+ }else{
+  spoonTool.position.lerp(spoonRestPosition,Math.min(1,dt*6));
+  spoonTool.rotation.z+=(spoonRestRotation.z-spoonTool.rotation.z)*Math.min(1,dt*6);
+  s.spoonLift+=(0-s.spoonLift)*Math.min(1,dt*6);
+ }
+ if(shake>0)shake=Math.max(0,shake-dt*.045);
+ if(s.finished){
+  s.cinematic=Math.min(2.45,s.cinematic+dt);
+  const mobile=renderer.domElement.clientWidth<700;
+  const targetPos=mobile?new THREE.Vector3(.98,3.16,6.65):new THREE.Vector3(.95,2.94,5.0);
+  const t=ease01(s.cinematic/2.1);
+  camera.position.copy(baseCameraPosition).lerp(targetPos,t);
+  camera.lookAt(baseLookAt.clone().lerp(new THREE.Vector3(0,1.56,0),t));
+  if(s.cinematic>=2.25&&!s.cinematicShown){s.cinematicShown=true;$('result').classList.remove('hidden');$('finishGlow').classList.remove('active');$('finaleWords').classList.remove('active');}
+ }
+ updatePourAudio();renderer.render(scene,camera);}
+renderer.setAnimationLoop(animate);
+refresh();window.__highballReady=true;$('loading').style.opacity='0';setTimeout(()=>{$('loading').style.display='none';$('intro').classList.remove('hidden')},500);
+</script>
+</body>
+</html>
