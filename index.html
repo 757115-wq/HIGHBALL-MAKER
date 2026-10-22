@@ -862,14 +862,14 @@ function setToolLayout(compact){
  compactLayout=compact;
  // The tumbler always stays at world x=0; this is important for collision
  // and pouring, so only the tools around it are moved.
- iceBucket.position.x=compact?-1.65:-2.70;
- tongRest.set(compact?-.87:-1.92,.825,.25);
- spoonRestPosition.x=compact?-1.62:-2.67;
+ iceBucket.position.x=compact?-1.56:-2.70;
+ tongRest.set(compact?-.78:-1.92,.825,.25);
+ spoonRestPosition.x=compact?-1.53:-2.67;
  if(!s.tongsActive)tongs.position.copy(tongRest);
  if(!s.spoonActive){spoonTool.position.copy(spoonRestPosition);spoonTool.rotation.copy(spoonRestRotation);}
  // Keep bottle resting points consistent with the drag and pour paths.
- bottleRests.whisky.set(compact?1.35:2.08,.13,-1.45);
- bottleRests.soda.set(compact?2.25:3.61,.10,.30);
+ bottleRests.whisky.set(compact?1.24:2.08,.13,-1.45);
+ bottleRests.soda.set(compact?1.82:3.61,.10,.30);
  if(!s.pour){whiskyBottle.position.copy(bottleRests.whisky);sodaBottle.position.copy(bottleRests.soda);}
  // The glass's invisible hit cylinder was larger than the visible glass;
  // in a compact layout, limit it so it does not steal taps from the whisky.
@@ -883,13 +883,14 @@ function fit(){
  camera.aspect=aspect;
  camera.fov=compact?43:37;
  if(compact){
-  // Frame the narrower set of props (approx. -2.35 to +2.65 world X).
-  // On an iPhone portrait screen the objects become ~1.6–2x larger than
-  // the old 22.8-unit camera without cutting off the ice bucket or soda.
-  const neededZ=5.08/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5)*aspect)*1.045;
-  const z=clamp(neededZ,12.7,20.0);
-  camera.position.set(.55,3.55,z);
-  baseLookAt.set(.13,1.40,-.06);
+  // Second-stage iPhone zoom: roughly 18–21% closer than the previous mobile view.
+  // Bring peripheral tools inward rather than crop the bucket or the soda bottle.
+  // Only the portrait layout changes. Desktop positions, interaction math and
+  // scoring remain identical to the tested version.
+  const neededZ=4.48/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5)*aspect)*1.015;
+  const z=clamp(neededZ,10.9,19.0);
+  camera.position.set(.13,3.45,z);
+  baseLookAt.set(.01,1.38,-.06);
  }else{
   // The original PC layout and perspective are deliberately unchanged.
   const neededZ=8.1/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5)*aspect)*1.08;
