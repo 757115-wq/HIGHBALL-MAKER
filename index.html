@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>HIGHBALL MAKER</title>
 <meta name="theme-color" content="#11100f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
 :root{--cream:#f1e8da;--muted:#aa9a83;--gold:#dabb7c;--edge:rgba(255,224,167,.20)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -80,6 +82,18 @@ button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #fbdca
 /* Subtle creator credit, intentionally non-interactive. */
 #creatorCredit{position:absolute;right:clamp(9px,1.4vw,18px);bottom:max(8px,env(safe-area-inset-bottom));z-index:11;pointer-events:none;user-select:none;color:rgba(234,220,201,.29);font:400 9px/1.2 system-ui,"Yu Gothic",sans-serif;letter-spacing:.045em;white-space:nowrap}
 @media(max-width:600px){#creatorCredit{font-size:8px;right:9px;bottom:max(6px,env(safe-area-inset-bottom))}}
+
+/* iPhone portrait: larger touch targets without bringing back game-time help. */
+@media(max-width:760px) and (orientation:portrait){
+ #top{padding-top:max(17px,env(safe-area-inset-top));padding-left:14px;padding-right:14px}
+ .topright .topbtn{min-height:40px;padding:10px 11px;font-size:11px}
+ .brand{font-size:clamp(12px,3.4vw,15px);letter-spacing:.13em}
+ .brand .sub{font-size:9px;margin-top:5px}
+ #result{bottom:max(25px,env(safe-area-inset-bottom));padding:12px 15px}
+ #result strong{font-size:clamp(16px,4.3vw,20px)}
+ #result .comment{font-size:clamp(12px,3.4vw,14px)}
+ #finaleWords{letter-spacing:.12em;font-size:clamp(15px,5vw,23px)}
+}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 </head>
@@ -839,17 +853,57 @@ function finish(){
 }
 $('finishBtn').addEventListener('click',()=>{endToolHold();if(s.finished){reset();return;}finish()});
 let baseCameraPosition=new THREE.Vector3(),baseLookAt=new THREE.Vector3();
-function fit(){
- const el=$('scene'),w=el.clientWidth,h=el.clientHeight;
- camera.aspect=w/Math.max(1,h);
- const mobile=w<700;
- camera.fov=mobile?46:37;
- camera.position.set(mobile?1.85:1.75,mobile?4.55:3.85,mobile?22.8:9.55);
- baseLookAt.set(mobile?.30:.25,mobile?1.37:1.33,-.06);baseCameraPosition.copy(camera.position);
- if(!s.finished)camera.lookAt(baseLookAt);
- camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,w<700?1.25:1.5));renderer.setSize(w,h);
+let compactLayout=null;
+// The narrow portrait viewport must not show the desktop-sized tool spacing
+// from a distant camera. Reposition the actual 3D tools instead: raycasting,
+// pointer drag, ice physics and the glass all keep using the same world units.
+function setToolLayout(compact){
+ if(compactLayout===compact)return;
+ compactLayout=compact;
+ // The tumbler always stays at world x=0; this is important for collision
+ // and pouring, so only the tools around it are moved.
+ iceBucket.position.x=compact?-1.65:-2.70;
+ tongRest.set(compact?-.87:-1.92,.825,.25);
+ spoonRestPosition.x=compact?-1.62:-2.67;
+ if(!s.tongsActive)tongs.position.copy(tongRest);
+ if(!s.spoonActive){spoonTool.position.copy(spoonRestPosition);spoonTool.rotation.copy(spoonRestRotation);}
+ // Keep bottle resting points consistent with the drag and pour paths.
+ bottleRests.whisky.set(compact?1.35:2.08,.13,-1.45);
+ bottleRests.soda.set(compact?2.25:3.61,.10,.30);
+ if(!s.pour){whiskyBottle.position.copy(bottleRests.whisky);sodaBottle.position.copy(bottleRests.soda);}
+ // The glass's invisible hit cylinder was larger than the visible glass;
+ // in a compact layout, limit it so it does not steal taps from the whisky.
+ hitGlass.scale.set(compact?.90:1,1,1);
 }
-window.addEventListener('resize',fit);fit();
+function fit(){
+ const el=$('scene'),w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);
+ const aspect=w/h;
+ const compact=w<760 && h>w*1.20;
+ setToolLayout(compact);
+ camera.aspect=aspect;
+ camera.fov=compact?43:37;
+ if(compact){
+  // Frame the narrower set of props (approx. -2.35 to +2.65 world X).
+  // On an iPhone portrait screen the objects become ~1.6–2x larger than
+  // the old 22.8-unit camera without cutting off the ice bucket or soda.
+  const neededZ=5.08/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5)*aspect)*1.045;
+  const z=clamp(neededZ,12.7,20.0);
+  camera.position.set(.55,3.55,z);
+  baseLookAt.set(.13,1.40,-.06);
+ }else{
+  // The original PC layout and perspective are deliberately unchanged.
+  const neededZ=8.1/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5)*aspect)*1.08;
+  const z=Math.max(9.55,neededZ);
+  camera.position.set(1.75,3.85,z);
+  baseLookAt.set(.25,1.33,-.06);
+ }
+ baseCameraPosition.copy(camera.position);
+ if(!s.finished)camera.lookAt(baseLookAt);
+ camera.updateProjectionMatrix();
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,w<700?1.25:1.5));
+ renderer.setSize(w,h);
+}
+window.addEventListener('resize',fit);
 // Ver.9.2: camera-safe bottle paths. Start tilting WHILE moving across the
 // side lane, instead of first lifting a fully upright bottle above the top edge.
 // Retraction exactly reverses the path: clear the glass before straightening.
@@ -907,7 +961,7 @@ function animate(){const dt=Math.min(.055,clock.getDelta());
   // Do not move a whisky bottle that is still retreating from the glass.
   if(kind==='whisky'&&progress<.015){
    mesh.position.z-=1.35*whiskyParkShift;
-   mesh.position.x+=1.04*whiskyParkShift;
+   mesh.position.x+=(compactLayout?.55:1.04)*whiskyParkShift;
   }
  }
  pourStream.visible=false;
@@ -1018,13 +1072,15 @@ function animate(){const dt=Math.min(.055,clock.getDelta());
  if(s.finished){
   s.cinematic=Math.min(2.45,s.cinematic+dt);
   const mobile=renderer.domElement.clientWidth<700;
-  const targetPos=mobile?new THREE.Vector3(.98,3.16,6.65):new THREE.Vector3(.95,2.94,5.0);
+  const targetPos=compactLayout?new THREE.Vector3(.78,3.08,7.45):(mobile?new THREE.Vector3(.98,3.16,6.65):new THREE.Vector3(.95,2.94,5.0));
   const t=ease01(s.cinematic/2.1);
   camera.position.copy(baseCameraPosition).lerp(targetPos,t);
   camera.lookAt(baseLookAt.clone().lerp(new THREE.Vector3(0,1.56,0),t));
   if(s.cinematic>=2.25&&!s.cinematicShown){s.cinematicShown=true;$('result').classList.remove('hidden');$('finishGlow').classList.remove('active');$('finaleWords').classList.remove('active');}
  }
  updatePourAudio();renderer.render(scene,camera);}
+// All resting points exist now; fit once before the first rendered frame.
+fit();
 renderer.setAnimationLoop(animate);
 refresh();window.__highballReady=true;$('loading').style.opacity='0';setTimeout(()=>{$('loading').style.display='none';$('intro').classList.remove('hidden')},500);
 </script>
